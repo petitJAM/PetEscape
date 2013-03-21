@@ -1,0 +1,16 @@
+
+#
+# Example PetEscape.mine.pro file.
+#
+
+INCLUDEPATH += /usr/local/share/include/boost/ \
+               /usr/local/share/include/allegro/
+
+LIBS += -L/usr/local/share/lib/boost/ \
+        -L/usr/local/share/lib/allegro/
+		
+# And anything else that would be specific to your 
+# environment. Easier than scripting things.
+# Don't use this example file or commit your
+# PetEscape.mine.pro file unless you name it 
+# something different.
