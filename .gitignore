@@ -10,4 +10,8 @@
 *.lai
 *.la
 *.a
+
 /out-debug/
+
+*.mine.pro
+*.pro.user
