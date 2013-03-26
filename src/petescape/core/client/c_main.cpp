@@ -12,11 +12,12 @@ namespace client {
 
 using petescape::networking::client::ClientConnection;
 
-PetEscapeClient::PetEscapeClient(boost::asio::io_service &io) :
+PetEscapeClient::PetEscapeClient(boost::asio::io_service &io, char* ipAddress) :
     m_resolver( io )
 {
     std::cout << "Here?\n";
-    tcp::resolver::query q( "127.0.0.1", "2001" );
+    std::cout << ipAddress << "\n";
+    tcp::resolver::query q( ipAddress, "2001" );
     tcp::resolver::iterator end_point = m_resolver.resolve( q );
 
     ClientConnection::client_conn_ptr client_ptr =
@@ -35,7 +36,7 @@ int c_main( int argc, char **argv )
     try
     {
         boost::asio::io_service io;
-        PetEscapeClient pec( io );
+        PetEscapeClient pec( io , argv[2]);
 
         // At this point, we need to kick into a thread
         // to do Allegro stuff.

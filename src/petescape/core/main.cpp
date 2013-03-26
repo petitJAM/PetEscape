@@ -20,18 +20,30 @@ int main( int argc, char **argv )
             ran = 1;
             petescape::core::server::s_main( argc, argv );
         }
-        else if( strcmp( argv[1], "--client" ) == 0 )
+        else if( strcmp(argv[1], "--this") == 0){
+            char* clientArgv[] = {argv[0], "--client", "127.0.0.1"};
+            int clientArgc = 3;
+            ran = 1;
+            petescape::core::client::c_main( clientArgc, clientArgv );
+        }
+        else if( (strcmp( argv[1], "--client" ) == 0 && argc == 3)  || strcmp(argv[2], "") == 1)
         {
             ran = 1;
             petescape::core::client::c_main( argc, argv );
         }
-
-        std::cerr << "Invalid argument:\n --client or --server only." << std::endl;
-        return 1;
+        else
+        {
+            std::cerr << "Invalid argument:\n --client, --this, or --server only." << std::endl;
+            return 1;
+        }
     }
 
     if( !ran )
-        petescape::core::client::c_main( argc, argv );
+    {
+        char* clientArgv[] = {argv[0], "--client", "127.0.0.1"};
+        int clientArgc = 3;
+        petescape::core::client::c_main( clientArgc, clientArgv );
+    }
 
     return 0;
 }

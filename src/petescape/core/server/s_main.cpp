@@ -38,6 +38,7 @@ void PetEscapeServer::handle_accept( ServerConnection::server_conn_ptr server_co
 {
     if( !error )
     {
+        std::cout << "Server accepting connection\n";
         server_conn->begin();
     }
 
