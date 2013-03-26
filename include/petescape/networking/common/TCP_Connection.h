@@ -9,21 +9,25 @@
 
 #include "net_struct.h"
 
-namespace petescape
-{
-namespace networking
-{
-namespace common
-{
+namespace petescape {
+namespace networking {
+namespace common {
+
 using boost::asio::ip::tcp;
 
-class TCP_Connection /*: public
-        boost::enable_shared_from_this< TCP_Connection >*/
+class TCP_Connection
 {
 public:
-    tcp::socket& getSocket();
+    inline tcp::socket& getSocket(){ return m_socket; }
+    inline uint32_t     getID(){ return m_id; }
 
     virtual void begin() = 0;
+
+    virtual void async_write( const packet_list &, packet_id, uint8_t ) = 0;
+    virtual void sync_write( const packet_list &, packet_id, uint8_t ) = 0;
+
+    virtual void async_read( packet_list &, packet_id & ) = 0;
+    virtual void sync_read( packet_list &, packet_id & ) = 0;
 
 protected:
     TCP_Connection( boost::asio::io_service &io_s, uint8_t id )
@@ -35,10 +39,10 @@ protected:
     virtual void read_callback( const boost::system::error_code &,
                                 size_t ) = 0;
 
-    tcp::socket m_socket;
-    uint8_t     m_id;
-    packet_list m_input;
-    packet_list m_output;
+    tcp::socket     m_socket;
+    uint32_t        m_id;
+    network_packet  m_input;
+    network_packet  m_output;
 };
 
 } // End Common Namespace

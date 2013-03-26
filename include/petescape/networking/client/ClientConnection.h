@@ -8,16 +8,12 @@
 #include "../common/net_struct.h"
 #include "../common/TCP_Connection.h"
 
-using namespace petescape::networking;
-
-namespace petescape
-{
-namespace networking
-{
-namespace client
-{
+namespace petescape {
+namespace networking {
+namespace client {
 
 using boost::asio::ip::tcp;
+using namespace petescape::networking::common;
 
 class ClientConnection :
         public common::TCP_Connection,
@@ -32,11 +28,18 @@ public:
         return client_conn_ptr( new ClientConnection( io_s, id ) );
     }
 
+    void sync_read( packet_list &, packet_id & );
+    void sync_write( const packet_list &, packet_id , uint8_t rr = 0);
+
+    void async_read( packet_list &, packet_id & ){}
+    void async_write( const packet_list &, packet_id, uint8_t rr = 0 ){}
+
+    inline void setID( const uint32_t id ){ this->m_id = id; }
+
     void begin();
 
 protected:
-    ClientConnection( boost::asio::io_service &io_s, uint8_t id )
-        : common::TCP_Connection( io_s, id ) {}
+    ClientConnection( boost::asio::io_service &io_s, uint32_t id );
 
     void write_callback( const boost::system::error_code &,
                          size_t );

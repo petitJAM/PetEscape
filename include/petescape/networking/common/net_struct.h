@@ -6,28 +6,94 @@
 /**
  * Get into the right namespace.
  */
-namespace petescape
+namespace petescape {
+namespace networking {
+namespace common {
+
+#define SERVER_HANDSHAKE_VALUE 0x1234CDEF
+#define CLIENT_HANDSHAKE_VALUE 0xFEDC4321
+
+/************************
+ *  Command structures  *
+ ************************/
+
+/**
+ *  Handshake messages structures.
+ */
+typedef struct CLIENT_HELLO
 {
-namespace networking
+    int8_t      client_ip[16];
+} client_hello;
+
+typedef struct HANDSHAKE
 {
-namespace common
+    uint32_t    code;
+} handshake_request, handshake_accept;
+
+typedef struct SERVER_INFO
 {
+    uint32_t    client_id;
+    uint64_t    server_base_time;
+} server_info;
+
+typedef struct CLIENT_ACCEPT
+{
+    uint32_t    client_id;
+} client_accept;
+
+/**
+ *  Server messages structures
+ */
+typedef struct UPDATE_OBJ
+{
+    uint32_t    id;
+    uint32_t    x;
+    uint32_t    y;
+    uint8_t     action;
+    uint8_t     facing;
+} update_obj, introduce_obj;
+
+typedef struct DESTROY_OBJ
+{
+    uint32_t    id;
+} destroy_obj;
+
+/**
+ *  Client messages structures
+ */
+typedef struct PLAYER_MOVE
+{
+    uint32_t    id;
+    uint8_t     direction;
+    uint8_t     start_stop;
+} player_move;
+
+typedef struct PLAYER_JUMP
+{
+    uint32_t    id;
+    uint8_t     start_stop;
+} player_jump;
+
+typedef struct PLAYER_ATTACK
+{
+    uint32_t    id;
+    uint8_t     type;
+} player_attack;
+
+/***************************
+ *  High-level structures  *
+ ***************************/
 
 /**
  * Struct that holds information about the data packet.
- * Should be exactly 64 bits.
+ * Should be exactly 32 bits.
  */
-struct packet_header
+typedef struct PACKET_HEADER
 {
     /**
      * @brief opcode Information about what to do with the data.
      */
     uint16_t opcode;
-
-    /**
-     * @brief data_format Tells us the union to use.
-     */
-    uint8_t data_format;
 
     /**
      * @brief response_required Self explanitory
@@ -39,48 +105,45 @@ struct packet_header
      */
     uint8_t sender_id;
 
-    /**
-     * @brief padding Availble bytes for later use.
-     */
-    uint8_t padding[4];
-};
+} packet_header;
 
-struct network_packet
+typedef enum PACKET_ID
 {
-    struct packet_header head;
+    DATA_NULL = 0x0000,
+    C_HELLO = 0x0001,
+    H_REQUEST,
+    H_ACCEPT,
+    S_INFO,
+    C_ACCEPT,
+    O_UPDATE,
+    O_INTRODUCE,
+    O_DESTORY,
+    P_MOVE,
+    P_JUMP,
+    P_ATTACK
+} packet_id;
 
-    uint32_t msg;
-
-//    union
-//    {
-//        struct
-//        {
-//            unsigned int v1;
-//            unsigned int v2;
-//        } t1;
-
-//        struct
-//        {
-//            signed int v1;
-//            signed int v2;
-//        } t2;
-
-//    } data;
-};
-
-struct string_net_packet
+typedef union PACKET_LIST
 {
-    struct packet_header head;
-
-    int8_t data[32];
-};
-
-typedef union NET_PACKET_GROUP
-{
-    struct packet_header header;
-    struct network_packet standard;
-    struct string_net_packet str_packet;
+    client_hello        c_hello;
+    handshake_request   h_request;
+    handshake_accept    h_accept;
+    server_info         s_info;
+    client_accept       c_accept;
+    update_obj          o_update;
+    introduce_obj       o_introduce;
+    destroy_obj         o_destroy;
+    player_move         p_move;
+    player_jump         p_jump;
+    player_attack       p_attack;
 } packet_list;
+
+typedef struct NETWORK_PACKET
+{
+    packet_header   head;
+    packet_list     data;
+} network_packet;
+
 
 } // End Common Namespace
 } // End Networking Namespace

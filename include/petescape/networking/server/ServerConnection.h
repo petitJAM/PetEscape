@@ -8,7 +8,7 @@
 #include "../common/net_struct.h"
 #include "../common/TCP_Connection.h"
 
-using namespace petescape::networking;
+using namespace petescape::networking::common;
 
 namespace petescape
 {
@@ -23,6 +23,8 @@ class ServerConnection :
         public common::TCP_Connection,
         public boost::enable_shared_from_this< ServerConnection >
 {
+    uint64_t m_server_start_time;
+
 public:
     typedef boost::shared_ptr< ServerConnection > server_conn_ptr;
 
@@ -34,8 +36,16 @@ public:
 
     void begin();
 
+    void setStartTime( time_t t ){ this->m_server_start_time = t; }
+
+    void async_write( const packet_list &, packet_id, uint8_t rr = 0 ){}
+    void sync_write( const packet_list &, packet_id, uint8_t rr = 0 );
+
+    void async_read( packet_list &, packet_id & ){}
+    void sync_read( packet_list &, packet_id & );
+
 protected:
-    ServerConnection( boost::asio::io_service &io_s, uint8_t id )
+    ServerConnection( boost::asio::io_service &io_s, uint32_t id )
         : common::TCP_Connection( io_s, id ) {}
 
     void write_callback( const boost::system::error_code &,
@@ -43,6 +53,14 @@ protected:
 
     void read_callback( const boost::system::error_code &,
                         size_t );
+
+    inline uint8_t GenClientID()
+    {
+        static uint8_t id = 0;
+        return ++id;
+    }
+
+    void handle_client_connect();
 };
 
 } // End Server Namespace
