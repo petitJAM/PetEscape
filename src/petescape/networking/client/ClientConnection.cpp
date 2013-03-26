@@ -14,7 +14,9 @@ void ClientConnection::begin()
 
     // Let's get this shit going. Write some stuff to the server.
 
-    strncpy( "unused", (char*)packet.c_hello.client_ip, sizeof( packet.c_hello.client_ip ) );
+    // TODO: Something is wrong with this line. probably something stupid.
+    //       I'll fix it later. Don't need it now.
+//    strncpy( "unused", (char*)packet.c_hello.client_ip, sizeof( packet.c_hello.client_ip ) );
     sync_write( packet, C_HELLO );
 
     sync_read( packet, id );

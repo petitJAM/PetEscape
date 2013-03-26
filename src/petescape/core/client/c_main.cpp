@@ -16,7 +16,7 @@ PetEscapeClient::PetEscapeClient(boost::asio::io_service &io) :
     m_resolver( io )
 {
     std::cout << "Here?\n";
-    tcp::resolver::query q( "137.112.136.105", "2001" );
+    tcp::resolver::query q( "127.0.0.1", "2001" );
     tcp::resolver::iterator end_point = m_resolver.resolve( q );
 
     ClientConnection::client_conn_ptr client_ptr =

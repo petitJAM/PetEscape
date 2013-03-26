@@ -13,9 +13,6 @@ int main( int argc, char **argv )
 {
     bool ran = false;
 
-    std::cout << argv[0] << std::endl;
-    std::cout << argv[1] << std::endl;
-
     if( argc > 1 )
     {
         if( strcmp( argv[1], "--server" ) == 0 )
@@ -23,6 +20,14 @@ int main( int argc, char **argv )
             ran = 1;
             petescape::core::server::s_main( argc, argv );
         }
+        else if( strcmp( argv[1], "--client" ) == 0 )
+        {
+            ran = 1;
+            petescape::core::client::c_main( argc, argv );
+        }
+
+        std::cerr << "Invalid argument:\n --client or --server only." << std::endl;
+        return 1;
     }
 
     if( !ran )

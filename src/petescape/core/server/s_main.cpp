@@ -51,7 +51,7 @@ int s_main( int argc, char ** argv )
         boost::asio::io_service io;
         PetEscapeServer pes( io );
 
-        std::cout << "Server has been started." << std::endl;
+        // Spin off server operations into another thread.
 
         io.run();
     }
