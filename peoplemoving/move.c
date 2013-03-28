@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_image.h>
  
 const float FPS = 60;
-const int SCREEN_W = 640;
-const int SCREEN_H = 480;
+const int SCREEN_W = 1000 ;
+const int SCREEN_H = 1000;
 const int BOUNCER_SIZE = 32;
 enum MYKEYS {
    KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT
@@ -15,11 +16,14 @@ int main(int argc, char **argv)
    ALLEGRO_EVENT_QUEUE *event_queue = NULL;
    ALLEGRO_TIMER *timer = NULL;
    ALLEGRO_BITMAP *bouncer = NULL;
-   float bouncer_x = SCREEN_W / 2.0 - BOUNCER_SIZE / 2.0;
-   float bouncer_y = SCREEN_H / 2.0 - BOUNCER_SIZE / 2.0;
+   float bouncer_x = SCREEN_W / 2.0; // - BOUNCER_SIZE / 2.0;
+   float bouncer_y = SCREEN_H / 2.0; // - BOUNCER_SIZE / 2.0;
    bool key[4] = { false, false, false, false };
    bool redraw = true;
    bool doexit = false;
+
+   int imageWidth=0;
+   int imageHeight=0;
  
    if(!al_init()) {
       fprintf(stderr, "failed to initialize allegro!\n");
@@ -30,8 +34,8 @@ int main(int argc, char **argv)
       fprintf(stderr, "failed to initialize the keyboard!\n");
       return -1;
    }
- 
-   timer = al_create_timer(1.0 / FPS);
+
+   timer = al_create_timer(0.1 / FPS);
    if(!timer) {
       fprintf(stderr, "failed to create timer!\n");
       return -1;
@@ -43,24 +47,24 @@ int main(int argc, char **argv)
       al_destroy_timer(timer);
       return -1;
    }
+   al_init_image_addon(); 
  
    bouncer = al_load_bitmap("Characterjump.bmp");
-   // if (!bmp)
-   //    abort_on_error("Couldn't load image.pcx!");
-   // ...
-   // destroy_bitmap(bmp);
+   al_convert_mask_to_alpha(bouncer,al_map_rgb(255,255,255));
 
-   // bouncer = al_create_bitmap(BOUNCER_SIZE, BOUNCER_SIZE);
+   //bouncer = al_create_bitmap(BOUNCER_SIZE, BOUNCER_SIZE);
    if(!bouncer) {
       fprintf(stderr, "failed to create bouncer bitmap!\n");
       al_destroy_display(display);
       al_destroy_timer(timer);
       return -1;
    }
+   imageWidth=al_get_bitmap_width(bouncer);
+   imageHeight=al_get_bitmap_height(bouncer);
  
    al_set_target_bitmap(bouncer);
  
-   al_clear_to_color(al_map_rgb(255, 0, 255));
+   // al_clear_to_color(al_map_rgb(255, 0, 255));
  
    al_set_target_bitmap(al_get_backbuffer(display));
  
@@ -158,7 +162,7 @@ int main(int argc, char **argv)
       if(redraw && al_is_event_queue_empty(event_queue)) {
          redraw = false;
  
-         al_clear_to_color(al_map_rgb(0,0,0));
+         al_clear_to_color(al_map_rgb(233,45,21));
  
          al_draw_bitmap(bouncer, bouncer_x, bouncer_y, 0);
  
@@ -170,6 +174,7 @@ int main(int argc, char **argv)
    al_destroy_timer(timer);
    al_destroy_display(display);
    al_destroy_event_queue(event_queue);
+   // al_shutdown_image_addon();
  
    return 0;
 }
