@@ -4,7 +4,10 @@ using petescape::networking::client::ClientConnection;
 using namespace petescape::networking::common;
 
 ClientConnection::ClientConnection( boost::asio::io_service &io_s, uint32_t id )
-    : common::TCP_Connection( io_s, id ) {}
+    : common::TCP_Connection( io_s, id )
+{
+    this->m_event_dispatcher = nullptr;
+}
 
 void ClientConnection::begin()
 {
@@ -58,16 +61,26 @@ void ClientConnection::begin()
 void ClientConnection::read_callback( const boost::system::error_code &/*error*/,
                                       size_t /*read_count*/ )
 {
-    // If a response is needed
-    if( m_input.head.response_required )
+    // Handle incoming packet asynchronously
+    if( this->m_event_dispatcher != nullptr )
     {
-        boost::asio::async_write( this->m_socket,
-                              boost::asio::buffer( &m_output, sizeof( m_output ) ),
-                              boost::bind( &ClientConnection::write_callback,
-                                           shared_from_this(),
-                                           boost::asio::placeholders::error,
-                                           boost::asio::placeholders::bytes_transferred ) );
+        ALLEGRO_EVENT event;
+        event.type = 512;
+        event.user.data1 = (intptr_t)&m_input;
+
+        al_emit_user_event( this->m_event_dispatcher, &event, nullptr );
     }
+
+//    // If a response is needed
+//    if( m_input.head.response_required )
+//    {
+//        boost::asio::async_write( this->m_socket,
+//                              boost::asio::buffer( &m_output, sizeof( m_output ) ),
+//                              boost::bind( &ClientConnection::write_callback,
+//                                           shared_from_this(),
+//                                           boost::asio::placeholders::error,
+//                                           boost::asio::placeholders::bytes_transferred ) );
+//    }
 }
 
 void ClientConnection::write_callback(const boost::system::error_code &/*error*/,
@@ -107,4 +120,9 @@ void ClientConnection::sync_read(packet_list &packet, packet_id &id)
 
     packet = m_input.data;
     id = (packet_id)m_input.head.opcode;
+}
+
+void ClientConnection::setEventSource(ALLEGRO_EVENT_SOURCE *src)
+{
+    this->m_event_dispatcher = src;
 }

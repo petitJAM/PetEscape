@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <allegro5/allegro.h>
 
 #include "../common/net_struct.h"
 #include "../common/TCP_Connection.h"
@@ -36,6 +37,8 @@ public:
 
     inline void setID( const uint32_t id ){ this->m_id = id; }
 
+    void setEventSource( ALLEGRO_EVENT_SOURCE *src );
+
     void begin();
 
 protected:
@@ -46,6 +49,8 @@ protected:
 
     void read_callback( const boost::system::error_code &,
                         size_t );
+
+    ALLEGRO_EVENT_SOURCE *m_event_dispatcher;
 };
 
 } // End Client Namespace
