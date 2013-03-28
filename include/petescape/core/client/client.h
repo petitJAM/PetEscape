@@ -17,7 +17,7 @@ using boost::asio::ip::tcp;
 class PetEscapeClient
 {
 public:
-    PetEscapeClient( boost::asio::io_service & , char* ipAddress);
+    PetEscapeClient(boost::asio::io_service & , const char *ipAddress);
 
 private:
     void init();

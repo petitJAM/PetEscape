@@ -23,7 +23,8 @@ SOURCES += \
     src/petescape/networking/server/ServerConnection.cpp \
     src/petescape/core/main.cpp \
     src/petescape/core/client/c_main.cpp \
-    src/petescape/core/server/s_main.cpp
+    src/petescape/core/server/s_main.cpp \
+    src/petescape/core/GameObject.cpp
 
 HEADERS += \
     include/petescape/networking/client/ClientConnection.h \
@@ -33,4 +34,6 @@ HEADERS += \
     include/petescape/networking/common/net_struct.h \
     include/petescape/networking/server/ServerConnection.h \
     include/petescape/core/server/server.h \
-    include/petescape/core/client/client.h
+    include/petescape/core/client/client.h \
+    include/petescape/core/GameObject.h \
+    include/petescape/core/ObjectRenderer.h
