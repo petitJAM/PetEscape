@@ -34,7 +34,7 @@ public:
     static GameObject* CreateGameObject( uint32_t );
 
     virtual void render();
-    inline const bool *isHeadless(){ return m_renderer != NULL; }
+    inline const bool isHeadless(){ return m_renderer != nullptr; }
 
     inline void setRenderer( ObjectRenderer *obj ){ this->m_renderer = obj; }
 

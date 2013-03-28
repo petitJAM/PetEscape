@@ -1,4 +1,5 @@
 #include "petescape/core/GameObject.h"
+#include <cstdlib>
 
 namespace petescape {
 namespace core {
@@ -10,7 +11,7 @@ GameObject::GameObject(uint32_t id) :
     this->m_y = 0;
     this->m_use_accel = false;
     this->m_use_vel = false;
-    this->m_renderer = NULL;
+    this->m_renderer = nullptr;
 }
 
 GameObject* GameObject::CreateGameObject( uint32_t id )

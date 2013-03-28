@@ -6,7 +6,9 @@ CONFIG -= qt
 include(PetEscape.mine.pro)
 
 win32 {
-    LIBS += libboost_system-vc100-mt-gd-1_53.lib
+    LIBS += libboost_system-vc100-mt-gd-1_53.lib \
+            -lallegro-5.0.8-mt \
+            -lallegro_image-5.0.8-mt
 }
 
 unix {
