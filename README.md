@@ -48,3 +48,47 @@ How to install/build boost 1.53
 		./b2 install 
 	where OUTPUT_DIRECTORY is the path to the output directory (your choice)
 
+Setting up INCLUDEPATH and LIBS
+---------
+
+The libraries that PetEscape require (at the time of this writing) are as follows: boost_system, allegro, and allegro_image.
+
+There may be additional information prefixing or suffixing the library name, that's okay, it's part of their naming convention.
+
+In the file "PetEscape.mine.pro", you should have something such as the following:
+
+    INCLUDEPATH += C:/devel/boost_1_53_0 \
+                   C:/devel/allegro_5_0_8/include
+
+    LIBS += -LC:/devel/boost_1_53_0/stage/lib \
+            -LC:/devel/allegro_5_0_8/lib
+
+NOTE: YOUR PATHS WILL BE DIFFERENT. That is why they are set in a file that is NOT version control here.
+
+Now that you have told your project where to find the libraries and header files for boost and Allegro, you should be able to build.
+
+TODO:
+=========
+There are currently no *nix libraries being loaded in the PetEscape.pro file. There is a section that looks like this:
+
+    win32 {
+        LIBS += libboost_system-vc100-mt-gd-1_53.lib \
+                -lallegro-5.0.8-mt \
+                -lallegro_image-5.0.8-mt
+    }
+
+    unix {
+        LIBS += # Unix LIbs.
+    }
+
+In the unix block, we still need to add the libraries. THESE NAMES SHOULD BE IDENTICAL ACROSS ALL UNIX PLATFORMS.
+
+I don't have a linux environment set up for Pet Escape at the moment, so this hasn't been a priority. If you are using a unix
+variant, copy the unix{} block from above, and put it in PetEscape.mine.pro for now. Add the required libraries in that section
+(use -l infront of the library name to specify that it is a library, see win32 section for example).
+
+REMEMBER:
+=========
+If the project isn't building, make sure there are no instances of the execuatble running, then right click on the project name
+in QtCreator, "clean", "qmake", "build". That will remove all associated binaries, object files, and it will recreate the Makefile
+with the latest information from the .pro files.
