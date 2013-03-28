@@ -49,9 +49,10 @@ void ClientConnection::begin()
 
     sync_write( packet, C_ACCEPT );
 
+#ifdef DEBUG
     std::cout << "Completed handshake with server.\n";
     std::cout << "Begining asyc operations...\n";
-
+#endif
 }
 
 void ClientConnection::read_callback( const boost::system::error_code &/*error*/,
