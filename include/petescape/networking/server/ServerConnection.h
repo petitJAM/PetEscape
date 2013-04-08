@@ -4,18 +4,16 @@
 #include <stdint.h>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <allegro5/allegro.h>
 
 #include "../common/net_struct.h"
 #include "../common/TCP_Connection.h"
 
 using namespace petescape::networking::common;
 
-namespace petescape
-{
-namespace networking
-{
-namespace server
-{
+namespace petescape {
+namespace networking {
+namespace server {
 
 using boost::asio::ip::tcp;
 
@@ -38,15 +36,20 @@ public:
 
     void setStartTime( time_t t ){ this->m_server_start_time = t; }
 
-    void async_write( const packet_list &, packet_id, uint8_t rr = 0 ){}
+    void async_write( const packet_list &, packet_id, uint8_t rr = 0 );
     void sync_write( const packet_list &, packet_id, uint8_t rr = 0 );
 
-    void async_read( packet_list &, packet_id & ){}
+    void async_read();
+    void sync_read();
     void sync_read( packet_list &, packet_id & );
+
+    void setEventSource( ALLEGRO_EVENT_SOURCE *src );
 
 protected:
     ServerConnection( boost::asio::io_service &io_s, uint32_t id )
-        : common::TCP_Connection( io_s, id ) {}
+        : common::TCP_Connection( io_s, id ) {
+        this->m_event_dispatcher = nullptr;
+    }
 
     void write_callback( const boost::system::error_code &,
                          size_t );
@@ -61,6 +64,8 @@ protected:
     }
 
     void handle_client_connect();
+
+    ALLEGRO_EVENT_SOURCE *m_event_dispatcher;
 };
 
 } // End Server Namespace

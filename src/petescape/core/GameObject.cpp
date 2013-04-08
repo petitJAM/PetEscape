@@ -14,6 +14,13 @@ GameObject::GameObject(uint32_t id) :
     this->m_renderer = nullptr;
 }
 
+GameObject* GameObject::CreateGameObject()
+{
+    static uint32_t n_id = 0;
+
+    return CreateGameObject( n_id++ );
+}
+
 GameObject* GameObject::CreateGameObject( uint32_t id )
 {
     GameObject *obj = new GameObject( id );

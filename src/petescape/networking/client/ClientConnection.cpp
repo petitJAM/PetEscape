@@ -11,7 +11,7 @@ ClientConnection::ClientConnection( boost::asio::io_service &io_s, uint32_t id )
 
 void ClientConnection::begin()
 {
-    // Let the server know that we want to talk with it.
+/*    // Let the server know that we want to talk with it.
     packet_list packet;
     packet_id   id;
 
@@ -50,52 +50,60 @@ void ClientConnection::begin()
     memset( &packet, 0, sizeof( packet ) );
     packet.c_accept.client_id = this->m_id;
 
-    sync_write( packet, C_ACCEPT );
+    std::cout << "good?\n";
 
-#ifdef DEBUG
+    sync_write( packet, C_ACCEPT );
+*/
+//#ifdef DEBUG
     std::cout << "Completed handshake with server.\n";
     std::cout << "Begining asyc operations...\n";
-#endif
+//#endif
+
+    async_read();
 }
 
-void ClientConnection::read_callback( const boost::system::error_code &/*error*/,
+void ClientConnection::read_callback( const boost::system::error_code &error,
                                       size_t /*read_count*/ )
 {
+
+    if( error )
+    {
+        std::cerr << "Error reading: " << error.message() << std::endl;
+        return;
+    }
+
+    std::cerr << "Client received packet...\n";
+
     // Handle incoming packet asynchronously
     if( this->m_event_dispatcher != nullptr )
     {
+        std::cerr << "Client dispatching packet\n";
         ALLEGRO_EVENT event;
         event.type = 512;
         event.user.data1 = (intptr_t)&m_input;
 
         al_emit_user_event( this->m_event_dispatcher, &event, nullptr );
     }
+    else
+    {
+        std::cerr << "Client failed to dispatch packet\n";
+    }
 
-//    // If a response is needed
-//    if( m_input.head.response_required )
-//    {
-//        boost::asio::async_write( this->m_socket,
-//                              boost::asio::buffer( &m_output, sizeof( m_output ) ),
-//                              boost::bind( &ClientConnection::write_callback,
-//                                           shared_from_this(),
-//                                           boost::asio::placeholders::error,
-//                                           boost::asio::placeholders::bytes_transferred ) );
-//    }
+    async_read();
 }
 
-void ClientConnection::write_callback(const boost::system::error_code &/*error*/,
+void ClientConnection::write_callback(const boost::system::error_code &error,
                                       size_t /*write_count*/ )
 {
-    // Wait for a read now.
-    // Write can be called from other places,
-    // so we don't need to call it explicitly here.
-
-    boost::asio::async_read( this->m_socket,
-                             boost::asio::buffer( &m_input, sizeof( m_input ) ),
-                             boost::bind( &ClientConnection::read_callback,
-                                          shared_from_this(),
-                                          boost::asio::placeholders::error,
-                                          boost::asio::placeholders::bytes_transferred ) );
+    // After a write we don't need to do anything except error checking
+    if( error )
+    {
+        std::cerr << "Error writing to server. " << error.message() << std::endl;
+    }
+    else
+    {
+        std::cerr << "Write successful." << std::endl;
+    }
 }
 
 
@@ -122,7 +130,30 @@ void ClientConnection::sync_read(packet_list &packet, packet_id &id)
     id = (packet_id)m_input.head.opcode;
 }
 
-void ClientConnection::setEventSource(ALLEGRO_EVENT_SOURCE *src)
+void ClientConnection::async_read()
 {
-    this->m_event_dispatcher = src;
+    boost::asio::async_read( this->m_socket,
+                             boost::asio::buffer( &m_input, sizeof( m_input ) ),
+                             boost::bind( &ClientConnection::read_callback,
+                                          this,
+                                          boost::asio::placeholders::error,
+                                          boost::asio::placeholders::bytes_transferred ) );
+
+}
+
+void ClientConnection::async_write(const packet_list &packet, packet_id id, uint8_t rr)
+{
+    this->m_output.data = packet;
+    this->m_output.head.opcode = id;
+    this->m_output.head.sender_id = this->m_id;
+    this->m_output.head.response_required = rr;
+
+    std::cout << "WRITING!" << std::endl;
+
+    boost::asio::async_write( this->m_socket,
+                               boost::asio::buffer( &m_output, sizeof( m_output ) ),
+                               boost::bind( &ClientConnection::write_callback,
+                                            this,
+                                            boost::asio::placeholders::error,
+                                            boost::asio::placeholders::bytes_transferred ) );
 }

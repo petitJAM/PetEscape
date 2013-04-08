@@ -26,7 +26,7 @@ public:
     virtual void async_write( const packet_list &, packet_id, uint8_t ) = 0;
     virtual void sync_write( const packet_list &, packet_id, uint8_t ) = 0;
 
-    virtual void async_read( packet_list &, packet_id & ) = 0;
+    virtual void async_read() = 0;
     virtual void sync_read( packet_list &, packet_id & ) = 0;
 
 protected:

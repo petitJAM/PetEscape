@@ -9,6 +9,8 @@
 #include "../common/net_struct.h"
 #include "../common/TCP_Connection.h"
 
+using namespace petescape::networking::common;
+
 namespace petescape {
 namespace networking {
 namespace client {
@@ -20,6 +22,7 @@ class ClientConnection :
         public common::TCP_Connection,
         public boost::enable_shared_from_this< ClientConnection >
 {
+
 public:
     typedef boost::shared_ptr< ClientConnection > client_conn_ptr;
 
@@ -32,12 +35,14 @@ public:
     void sync_read( packet_list &, packet_id & );
     void sync_write( const packet_list &, packet_id , uint8_t rr = 0);
 
-    void async_read( packet_list &, packet_id & ){}
-    void async_write( const packet_list &, packet_id, uint8_t rr = 0 ){}
+    void async_read();
+    void async_write( const packet_list &, packet_id, uint8_t rr = 0 );
 
     inline void setID( const uint32_t id ){ this->m_id = id; }
 
-    void setEventSource( ALLEGRO_EVENT_SOURCE *src );
+    inline void setEventSource( ALLEGRO_EVENT_SOURCE *src ) {
+        this->m_event_dispatcher = src;
+    }
 
     void begin();
 

@@ -8,12 +8,9 @@
 #include <map>
 #include <boost/asio.hpp>
 
-namespace petescape
-{
-namespace core
-{
-namespace client
-{
+namespace petescape {
+namespace core {
+namespace client {
 
 int c_main( int, char ** );
 
@@ -32,18 +29,25 @@ public:
     void updateObject( const update_obj* );
     void destoryObject( const destroy_obj* );
 
+    void write( packet_list plist, packet_id id );
+    void cleanup();
+
+    ClientConnection::client_conn_ptr getConnection(){
+        return m_client_ptr;
+    }
+
 private:
     void init();
 
     std::map<uint32_t, GameObject*> m_objects;
 
-    tcp::resolver   m_resolver;
-    uint64_t        m_start_time;
-    uint8_t         m_client_id;
+    tcp::resolver           m_resolver;
+    tcp::resolver::iterator m_end_point;
+    uint64_t                m_start_time;
+    uint8_t                 m_client_id;
     ClientConnection::client_conn_ptr m_client_ptr;
 };
 
-}
-}
-}
+}}}
+
 #endif

@@ -11,7 +11,15 @@ class ObjectRenderer
 public:
     ObjectRenderer(){}
 
-    virtual void render( const GameObject * ) = 0;
+    virtual void render( GameObject * ) = 0;
+};
+
+class PoorRenderer : public ObjectRenderer
+{
+public:
+    PoorRenderer(){}
+
+    void render( GameObject * );
 };
 
 }

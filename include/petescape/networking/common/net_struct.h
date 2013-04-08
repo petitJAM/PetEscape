@@ -10,9 +10,6 @@ namespace petescape {
 namespace networking {
 namespace common {
 
-#define SERVER_HANDSHAKE_VALUE 0x1234CDEF
-#define CLIENT_HANDSHAKE_VALUE 0xFEDC4321
-
 /************************
  *  Command structures  *
  ************************/
@@ -25,21 +22,10 @@ typedef struct CLIENT_HELLO
     int8_t      client_ip[16];
 } client_hello;
 
-typedef struct HANDSHAKE
-{
-    uint32_t    code;
-} handshake_request, handshake_accept;
-
 typedef struct SERVER_INFO
 {
     uint32_t    client_id;
-    uint64_t    server_base_time;
 } server_info;
-
-typedef struct CLIENT_ACCEPT
-{
-    uint32_t    client_id;
-} client_accept;
 
 /**
  *  Server messages structures
@@ -111,10 +97,8 @@ typedef enum PACKET_ID
 {
     DATA_NULL = 0x0000,
     C_HELLO = 0x0001,
-    H_REQUEST,
-    H_ACCEPT,
+    C_READY,
     S_INFO,
-    C_ACCEPT,
     O_UPDATE,
     O_INTRODUCE,
     O_DESTORY,
@@ -126,10 +110,7 @@ typedef enum PACKET_ID
 typedef union PACKET_LIST
 {
     client_hello        c_hello;
-    handshake_request   h_request;
-    handshake_accept    h_accept;
     server_info         s_info;
-    client_accept       c_accept;
     update_obj          o_update;
     introduce_obj       o_introduce;
     destroy_obj         o_destroy;

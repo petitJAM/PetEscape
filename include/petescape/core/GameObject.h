@@ -2,6 +2,7 @@
 #define GAMEOBJECT_H
 
 #include <stdint.h>
+#include <float.h>
 #include "ObjectRenderer.h"
 
 namespace petescape {
@@ -31,6 +32,7 @@ public:
 
     inline const uint32_t &getID(){ return m_id; }
 
+    static GameObject* CreateGameObject( );
     static GameObject* CreateGameObject( uint32_t );
 
     virtual void render();
