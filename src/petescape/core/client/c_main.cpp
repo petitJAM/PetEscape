@@ -35,6 +35,9 @@ network_packet                input;
 std::map<uint32_t, GameObject *> objs;
 
 uint8_t                       client_id;
+
+int                           map_length;
+int                           map_height;
 }
 
 class NetworkOps_
@@ -176,15 +179,31 @@ public:
         case S_INFO:
             client_id = packet->data.s_info.client_id;
             NetOps.async_write( new_packet, C_READY );
+            std::cerr << "recieved S_INFO, sending C_READY" << std::endl;
+        break;
+        case S_MAP_HEADER:
+            map_length = packet->data.s_map_header.stage_length;
+            map_height = packet->data.s_map_header.stage_height;
+            NetOps.async_write(new_packet, C_REQUEST_MAP);
+            std::cerr << "recieved S_MAP_HEADER, sending C_REQUEST_MAP and C_BUILD_OBJECTS" << std::endl;
+            NetOps.async_write(new_packet, C_BUILD_OBJECTS);
         break;
         case O_INTRODUCE:
             genObject( &packet->data.o_introduce );
+            std::cerr << "recieved O_INTRODUCE" << std::endl;
         break;
         case O_UPDATE:
             updateObject( &packet->data.o_update );
+            std::cerr << "recieved O_UPDATE" << std::endl;
         break;
         case O_DESTORY:
             destroyObject( &packet->data.o_destroy );
+            std::cerr << "recieved O_DESTROY" << std::endl;
+        break;
+
+        default:
+            // Do nothing.
+            std::cerr << "Do nothing." << std::endl;
         break;
         }
     }
@@ -268,6 +287,7 @@ int c_main( int argc, char **argv )
             break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                std::cerr << "recieving event ALLEGRO_EVENT_MOUSE_BUTTON_DOWN" << std::endl;
                 if( socket == nullptr)
                 {
                     packet_list padding;
@@ -277,13 +297,14 @@ int c_main( int argc, char **argv )
                     std::cerr << "Connected." << std::endl;
 
                     NetOps.async_write( padding, C_HELLO );
+                    std::cerr << "sending C_HELLO" << std::endl;
 
                     NetOps.async_read();
                 }
             break;
 
             case NETWORK_RECV:
-                std::cout << "Packet received." << std::endl;
+                std::cerr << "recieving event NETWORK_RECV" << std::endl;
 
                 // Pass the packet off to the packet handler.
                 GameOps.handlePacket( (network_packet *)event.user.data1 );
@@ -293,7 +314,10 @@ int c_main( int argc, char **argv )
             break;
 
             case NETWORK_CLOSE:
+                std::cerr << "recieving event NETWORK_CLOSE" << std::endl;
+            break;
             case ALLEGRO_EVENT_DISPLAY_CLOSE:
+                std::cerr << "recieving event ALLEGRO_EVENT_DISPLAY_CLOSE" << std::endl;
                 should_exit = true;
             break;
             }

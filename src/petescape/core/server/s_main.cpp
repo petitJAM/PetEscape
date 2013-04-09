@@ -1,7 +1,7 @@
 
 #include "petescape/core/server/server.h"
 #include "petescape/networking/common/net_struct.h"
-#include "petescape/networking/server/ServerConnection.h"
+//#include "petescape/networking/server/ServerConnection.h"
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
@@ -45,6 +45,27 @@ void async_write( packet_list list, packet_id id )
 
         boost::asio::async_write( *socket,
                                   boost::asio::buffer( &packet, sizeof( packet ) ),
+                                  boost::bind( &NetworkOps_::async_write_callback,
+                                               this,
+                                               boost::asio::placeholders::error,
+                                               boost::asio::placeholders::bytes_transferred ) );
+    }
+    else
+    {
+        std::cerr << "Error: socket unavailable to write to." << std::endl;
+    }
+}
+
+void async_write(void* data)
+{
+    if( socket->is_open() )
+    {
+        std::cerr << "writing packet." << std::endl;
+
+        // TODO this code doesn't work becuse the sizeof throws an illegal indirection when written properly
+        boost::asio::async_write( *socket,
+                                  boost::asio::buffer( data,
+                                                       sizeof( /* * */data ) ),
                                   boost::bind( &NetworkOps_::async_write_callback,
                                                this,
                                                boost::asio::placeholders::error,
@@ -136,10 +157,29 @@ public:
 
             // Tell the client its ID
             NetworkOps.async_write( new_packet, S_INFO );
+            std::cerr << "recieved C_HELLO, write with S_INFO" <<std::endl;
         break;
 
         case C_READY:
-            // Send the client anything that it needs.
+            // Send the client anything that it needs. In this case, a map header.
+            new_packet.s_map_header.stage_length = 100;
+            new_packet.s_map_header.stage_height = 40;
+
+            NetworkOps.async_write(new_packet, S_MAP_HEADER);
+            std::cerr << "recieved C_READY, write with S_MAP_HEADER" << std::endl;
+        break;
+
+        case C_REQUEST_MAP:
+            //Begin sending the client a stream of map information.
+            // TODO map generation code
+            char generic_map[4000];
+
+            // causes an error, so i'm commenting it out.
+            //NetworkOps.async_write(generic_map);
+            std::cerr << "recieved C_REQUEST_MAP, method needs to be worked on." << std::endl;
+        break;
+
+        case C_BUILD_OBJECTS:
             BOOST_FOREACH( map_element i, objs )
             {
                 new_packet.o_introduce.id = ((GameObject*)(i.second))->getID();
@@ -147,13 +187,14 @@ public:
                 new_packet.o_introduce.y  = (uint32_t)((GameObject*)(i.second))->getY();
 
                 NetworkOps.async_write( new_packet, O_INTRODUCE );
-                std::cerr << "Wrote." << std::endl;
             }
-
+            std::cerr << "Wrote " <<( new_packet.o_introduce.id+1) << " objects." << std::endl;
+            std::cerr << "recieved C_BUILD_OBJECTS, write with O_INTRODUCE" << std::endl;
         break;
 
         default:
             // Do nothing.
+            std::cerr << "Do nothing." << std::endl;
         break;
         }
     }
@@ -241,15 +282,18 @@ int s_main( int /*argc*/, char ** /*argv*/ )
             switch( event.type )
             {
             case NETWORK_CONNECT:
+                std::cerr << "recieving event NETWORK_CONNECT" << std::endl;
                 // If we need to do anything when the Client connects, it goes here.
                 // For testing, we create a GameObject, and move it to 100,100.
                 tmp = ServerOps.genObject();
                 objs[ tmp ]->setX( 100 );
                 objs[ tmp ]->setY( 100 );
+
+
             break;
 
             case NETWORK_RECV:
-                std::cerr << "Received Packet." << std::endl;
+                std::cerr << "recieving event NETWORK_RECV" << std::endl;
 
                 // Do something based off what kind of packet it is.
                 ServerOps.handlePacket( (network_packet *)event.user.data1 );
@@ -259,6 +303,7 @@ int s_main( int /*argc*/, char ** /*argv*/ )
             break;
 
             case NETWORK_CLOSE:
+                std::cerr << "recieving event NETWORK_CLOSE" << std::endl;
                 should_exit = true;
             break;
 

@@ -30,6 +30,12 @@ typedef struct SERVER_INFO
 /**
  *  Server messages structures
  */
+typedef struct MAP_HEADER
+{
+    uint32_t    stage_length;
+    uint32_t    stage_height;
+} map_header;
+
 typedef struct UPDATE_OBJ
 {
     uint32_t    id;
@@ -98,7 +104,11 @@ typedef enum PACKET_ID
     DATA_NULL = 0x0000,
     C_HELLO = 0x0001,
     C_READY,
+    C_REQUEST_MAP,
+    C_BUILD_OBJECTS,
     S_INFO,
+    S_MAP_HEADER,
+    S_MAP_DATA,
     O_UPDATE,
     O_INTRODUCE,
     O_DESTORY,
@@ -111,6 +121,7 @@ typedef union PACKET_LIST
 {
     client_hello        c_hello;
     server_info         s_info;
+    map_header          s_map_header;
     update_obj          o_update;
     introduce_obj       o_introduce;
     destroy_obj         o_destroy;
