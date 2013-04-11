@@ -170,6 +170,23 @@ public:
     {
         objs.erase( obj->getID() );
     }
+
+    char* generateMapData(uint32_t height, uint32_t width)
+    {
+        uint32_t length = height * width;
+        char* map = new char[length];
+
+        uint32_t i;
+        for (i=0; i<length; i++)
+        {
+            if (i % height == height-1)
+                map[i] = 1;
+            else
+                map[i] = 0;
+        }
+
+        return map;
+    }
 };
 
 namespace {
@@ -230,6 +247,18 @@ int s_main( int /*argc*/, char ** /*argv*/ )
         tcp_acceptor.async_accept( *socket,
                                    boost::bind( &accept_handler,
                                                 boost::asio::placeholders::error ) );
+
+        printf("In s_main\n");
+        // Init Map Data
+        uint32_t h = 12, w = 12;
+        char* map = ServerOps.generateMapData(h, w);
+        uint32_t i, j;
+        for (i=0; i<h; i++)
+        {
+            for (j=0; j<w; j+=h)
+                printf("%d", map[j]);
+            printf("\n");
+        }
 
         // allegro event queue
         while( !should_exit )
