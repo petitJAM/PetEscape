@@ -8,7 +8,9 @@ namespace core {
 
 void PoorRenderer::render( GameObject* obj )
 {
-    al_draw_pixel( obj->getX(), obj->getY(), al_map_rgb( 0, 0, 0 ) );
+    for( uint32_t i = 0; i < obj->getWidth(); ++i )
+        for( uint32_t j = 0; j < obj->getHeigth(); ++j )
+            al_draw_pixel( obj->getX() + i, obj->getY() + j, al_map_rgb( 0, 0, 0 ) );
 }
 
 }

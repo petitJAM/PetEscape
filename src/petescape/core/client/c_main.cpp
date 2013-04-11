@@ -1,6 +1,7 @@
 
 #include "petescape/core/client/client.h"
 #include "petescape/core/ObjectRenderer.h"
+#include "petescape/core/core_defs.h"
 
 #include "petescape/networking/client/ClientConnection.h"
 #include "petescape/networking/common/net_struct.h"
@@ -32,13 +33,18 @@ boost::asio::io_service       client_io_service;
 boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
-std::map<uint32_t, GameObject *> objs;
+std::map<uint32_t, GameObject *>   objs;
+std::map<uint32_t, PlayerObject *> players;
 
 uint8_t                       client_id;
 
 int                           map_width;
 int                           map_height;
+<<<<<<< HEAD
 char*                         map;
+=======
+uint8_t                      *map;
+>>>>>>> 4668f0c55ef35664624bdcd7c6b1fc66a683bfda
 }
 
 class NetworkOps_
@@ -49,7 +55,7 @@ void async_write( packet_list list, packet_id id )
 {
     if( socket->is_open() )
     {
-        std::cerr << "writing packet." << std::endl;
+        MESSAGE( "writing packet." );
         network_packet packet;
         packet.data = list;
         packet.head.opcode = id;
@@ -65,7 +71,7 @@ void async_write( packet_list list, packet_id id )
     }
     else
     {
-        std::cerr << "Error: socket unavailable to write to." << std::endl;
+        MESSAGE( "Error: socket unavailable to write to." );
     }
 }
 
@@ -75,7 +81,7 @@ void async_write_callback( const boost::system::error_code &error, size_t /*tran
     {
         ALLEGRO_EVENT event;
         event.type = NETWORK_CLOSE;
-        std::cerr << "Error on write: " << error.message() << std::endl;
+        MESSAGE( "Error on write: " << error.message() );
         al_emit_user_event( &network_event_source, &event, nullptr );
     }
 }
@@ -93,7 +99,7 @@ void async_read()
     }
     else
     {
-        std::cerr << "Error: socket unavailable to read from." << std::endl;
+        MESSAGE( "Error: socket unavailable to read from." );
     }
 }
 
@@ -107,7 +113,7 @@ void async_read_callback( const boost::system::error_code &error, size_t /*trans
     if( error )
     {
         event.type = NETWORK_CLOSE;
-        std::cerr << "Error on read: " << error.message() << std::endl;
+        MESSAGE( "Error on read: " << error.message() );
     }
     else
     {
@@ -120,7 +126,7 @@ void async_read_callback( const boost::system::error_code &error, size_t /*trans
         event.type = NETWORK_RECV;
         event.user.data1 = (intptr_t)packet;
 
-        std::cerr << "Got packet." << std::endl;
+        MESSAGE( "Got packet." );
     }
 
     al_emit_user_event( &network_event_source, &event, nullptr );
@@ -157,12 +163,28 @@ public:
         }
         else
         {
-            GameObject *obj = GameObject::CreateGameObject( data->id );
+            GameObject *obj = nullptr;
+
+            switch( data->type )
+            {
+            case PlayerType:
+                obj = PlayerObject::CreatePlayer( data->id );
+                players[ data->id ] = static_cast<PlayerObject*>(obj);
+            break;
+            case OtherType:
+                obj = GameObject::CreateGameObject( data->id );
+                objs[ data->id ] = obj;
+            break;
+            default:
+                MESSAGE( "Unsupported Type. Defaulting to basic type." );
+                obj = GameObject::CreateGameObject( data->id );
+                objs[ data->id ] = obj;
+            break;
+            }
+
             obj->setX( data->x );
             obj->setY( data->y );
             obj->setRenderer( new petescape::core::PoorRenderer );
-
-            objs[ data->id ] = obj;
         }
     }
 
@@ -180,7 +202,7 @@ public:
         case S_INFO:
             client_id = packet->data.s_info.client_id;
             NetOps.async_write( new_packet, C_READY );
-            std::cerr << "received S_INFO, sending C_READY" << std::endl;
+            MESSAGE( "recieved S_INFO, sending C_READY" );
         break;
         case S_MAP_HEADER:
             map_width = packet->data.s_map_header.stage_length;
@@ -188,6 +210,7 @@ public:
             std::cerr << "received S_MAP_HEADER, sending C_REQUEST_MAP and C_BUILD_OBJECTS" << std::endl;
             std::cerr << "expecting map of size " << map_width << " x " << map_height << std::endl;
             NetOps.async_write(new_packet, C_REQUEST_MAP);
+            MESSAGE( "recieved S_MAP_HEADER, sending C_REQUEST_MAP and C_BUILD_OBJECTS" );
             NetOps.async_write(new_packet, C_BUILD_OBJECTS);
         break;
         case S_MAP_DATA:
@@ -213,20 +236,21 @@ public:
         break;
         case O_INTRODUCE:
             genObject( &packet->data.o_introduce );
-            std::cerr << "received O_INTRODUCE" << std::endl;
+
+            MESSAGE( "recieved O_INTRODUCE" );
         break;
         case O_UPDATE:
             updateObject( &packet->data.o_update );
-            std::cerr << "received O_UPDATE" << std::endl;
+            MESSAGE( "recieved O_UPDATE" );
         break;
         case O_DESTORY:
             destroyObject( &packet->data.o_destroy );
-            std::cerr << "received O_DESTROY" << std::endl;
+            MESSAGE( "recieved O_DESTROY" );
         break;
 
         default:
             // Do nothing.
-            std::cerr << "Do nothing." << std::endl;
+            MESSAGE( "Do nothing." );
         break;
         }
     }
@@ -259,31 +283,31 @@ int c_main( int argc, char **argv )
 
         if( !al_init() )
         {
-            std::cerr << "Failed to initialize Allegro.\n";
+            MESSAGE( "Failed to initialize Allegro." );
             return -1;
         }
 
         if( !al_install_mouse() )
         {
-            std::cerr << "Error initializing Allegro mouse driver." << std::endl;
+            MESSAGE( "Error initializing Allegro mouse driver." );
             return -2;
         }
 
         if( !( client_queue = al_create_event_queue() ) )
         {
-            std::cerr << "Unable to create Allegro Event Queue.\n";
+            MESSAGE( "Unable to create Allegro Event Queue." );
             return -3;
         }
 
         if( !( timer = al_create_timer( 1.0 / 30.0 ) ) )
         {
-            std::cerr << "Error initializing Allegro timer." << std::endl;
+            MESSAGE( "Error initializing Allegro timer." );
             return -4;
         }
 
         if( !( display = al_create_display( 800, 600 ) ) )
         {
-            std::cerr << "Error initializing Allegro dispay driver." << std::endl;
+            MESSAGE( "Error initializing Allegro dispay driver." );
             al_destroy_timer( timer );
             return -5;
         }
@@ -310,24 +334,24 @@ int c_main( int argc, char **argv )
             break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                std::cerr << "recieving event ALLEGRO_EVENT_MOUSE_BUTTON_DOWN" << std::endl;
+                MESSAGE( "recieving event ALLEGRO_EVENT_MOUSE_BUTTON_DOWN" );
                 if( socket == nullptr)
                 {
                     packet_list padding;
 
                     socket = new boost::asio::ip::tcp::socket( client_io_service );
                     boost::asio::connect( *socket, tcp_endpoint );
-                    std::cerr << "Connected." << std::endl;
+                    MESSAGE( "Connected." );
 
                     NetOps.async_write( padding, C_HELLO );
-                    std::cerr << "sending C_HELLO" << std::endl;
+                    MESSAGE( "sending C_HELLO" );
 
                     NetOps.async_read();
                 }
             break;
 
             case NETWORK_RECV:
-                std::cerr << "recieving event NETWORK_RECV" << std::endl;
+                MESSAGE( "recieving event NETWORK_RECV" );
 
                 // Pass the packet off to the packet handler.
                 GameOps.handlePacket( (network_packet *)event.user.data1 );
@@ -337,10 +361,10 @@ int c_main( int argc, char **argv )
             break;
 
             case NETWORK_CLOSE:
-                std::cerr << "recieving event NETWORK_CLOSE" << std::endl;
+                MESSAGE( "recieving event NETWORK_CLOSE" );
             break;
             case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                std::cerr << "recieving event ALLEGRO_EVENT_DISPLAY_CLOSE" << std::endl;
+                MESSAGE( "recieving event ALLEGRO_EVENT_DISPLAY_CLOSE" );
                 should_exit = true;
             break;
             }
@@ -353,6 +377,12 @@ int c_main( int argc, char **argv )
 
                 // Rendering code goes here
                 BOOST_FOREACH( m_element tmp, objs )
+                {
+                    ((GameObject*)(tmp.second))->render();
+                }
+
+
+                BOOST_FOREACH( m_element tmp, players )
                 {
                     ((GameObject*)(tmp.second))->render();
                 }
@@ -372,7 +402,7 @@ int c_main( int argc, char **argv )
     }
     catch( std::exception &e )
     {
-        std::cerr << "Error: " << e.what() << std::endl;
+        MESSAGE( "Error: " << e.what() );
         return -1;
     }
 

@@ -1,5 +1,6 @@
 
 #include "petescape/core/server/server.h"
+#include "petescape/core/core_defs.h"
 #include "petescape/networking/common/net_struct.h"
 //#include "petescape/networking/server/ServerConnection.h"
 
@@ -25,11 +26,16 @@ boost::asio::io_service       server_io_service;
 boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
+<<<<<<< HEAD
 std::map<uint32_t, GameObject *> objs;
 
 char*                         map;
 uint32_t                      map_height = 12;
 uint32_t                      map_width = 12;
+=======
+std::map<uint32_t, GameObject *>   objs;
+std::map<uint32_t, PlayerObject *> players;
+>>>>>>> 4668f0c55ef35664624bdcd7c6b1fc66a683bfda
 }
 
 class NetworkOps_
@@ -40,7 +46,7 @@ void async_write( packet_list list, packet_id id )
 {
     if( socket->is_open() )
     {
-        std::cerr << "writing packet." << std::endl;
+        MESSAGE( "writing packet." );
         network_packet packet;
         packet.data = list;
         packet.head.opcode = id;
@@ -56,14 +62,19 @@ void async_write( packet_list list, packet_id id )
     }
     else
     {
-        std::cerr << "Error: socket unavailable to write to." << std::endl;
+        MESSAGE( "Error: socket unavailable to write to." );
     }
 }
 
-void async_write(void* data)
+
+// DEPRECATED: We can't do this. Have to send though the
+// other function. The client expects network_packets,
+// and breaks otherwise.
+void async_write( void* data, size_t size )
 {
     if( socket->is_open() )
     {
+        // alex's crap
         std::cerr << "writing packet." << std::endl;
         std::cerr << sizeof(char) << std::endl;
         std::cerr << "sizeof data sent is " << sizeof(data) << std::endl;
@@ -75,11 +86,13 @@ void async_write(void* data)
         packet.head.opcode = S_MAP_DATA;
         packet.head.response_required = 0;
         packet.head.sender_id = 0;
+        // end alex's crap
 
-        // xTODOx this code doesn't work becuse the sizeof throws an illegal indirection when written properly
-        // that's no longer the problem. it seems that this packet is sending the pointer and not the data itself.
+        // TODO this code doesn't work becuse the sizeof throws an illegal indirection when written properly
+        // Fixed - Neil
+        MESSAGE( "writing packet." );
         boost::asio::async_write( *socket,
-                                  boost::asio::buffer( &packet, sizeof( packet ) ),
+                                  boost::asio::buffer( data, size ),
                                   boost::bind( &NetworkOps_::async_write_callback,
                                                this,
                                                boost::asio::placeholders::error,
@@ -87,7 +100,7 @@ void async_write(void* data)
     }
     else
     {
-        std::cerr << "Error: socket unavailable to write to." << std::endl;
+        MESSAGE( "Error: socket unavailable to write to." );
     }
 }
 
@@ -95,7 +108,7 @@ void async_write_callback( const boost::system::error_code &error, size_t /*tran
 {
     if( error )
     {
-        std::cerr << "Error on write: " << error.message() << std::endl;
+        MESSAGE( "Error on write: " << error.message() );
     }
 }
 
@@ -112,7 +125,7 @@ void async_read()
     }
     else
     {
-        std::cerr << "Error: socket unavailable to read from." << std::endl;
+        MESSAGE( "Error: socket unavailable to read from." );
     }
 }
 
@@ -126,7 +139,7 @@ void async_read_callback( const boost::system::error_code &error, size_t /*trans
     if( error )
     {
         event.type = NETWORK_CLOSE;
-        std::cerr << "Error on read: " << error.message() << std::endl;
+        MESSAGE( "Error on read: " << error.message() );
     }
     else
     {
@@ -161,7 +174,6 @@ public:
 
     void handlePacket( const network_packet *packet )
     {
-        static uint8_t NextID = 0;
         packet_list new_packet;
         // TODO put this in a better spot so map is saved on the server
         char* map;
@@ -169,25 +181,29 @@ public:
 
         switch( packet->head.opcode )
         {
-        case C_HELLO:
-            new_packet.s_info.client_id = NextID++;
+        case C_HELLO: {
+            PlayerObject *player = PlayerObject::CreatePlayer();
+            players[ player->getID() ] = player;
+
+            new_packet.s_info.client_id = player->getID();
 
             // Tell the client its ID
             NetworkOps.async_write( new_packet, S_INFO );
-            std::cerr << "recieved C_HELLO, write with S_INFO" <<std::endl;
-        break;
+            MESSAGE( "recieved C_HELLO, write with S_INFO" );
+        }break;
 
-        case C_READY:
+        case C_READY: {
             // Send the client anything that it needs. In this case, a map header.
             new_packet.s_map_header.stage_length = map_width;
             new_packet.s_map_header.stage_height = map_height;
 
             NetworkOps.async_write(new_packet, S_MAP_HEADER);
-            std::cerr << "recieved C_READY, write with S_MAP_HEADER" << std::endl;
-        break;
+            MESSAGE( "recieved C_READY, write with S_MAP_HEADER" );
+        } break;
 
-        case C_REQUEST_MAP:
+        case C_REQUEST_MAP: {
             //Begin sending the client a stream of map information.
+<<<<<<< HEAD
 
             // Init Map Data
             map = generateMapData(map_height, map_width);
@@ -210,24 +226,53 @@ public:
 
             std::cerr << "recieved C_REQUEST_MAP, method needs to be worked on." << std::endl;
         break;
+=======
+            // TODO map generation code
+            uint8_t generic_map[4000];
 
-        case C_BUILD_OBJECTS:
-            BOOST_FOREACH( map_element i, objs )
+            // TODO: We're going to have to split the map into
+            // sub-sections and send it piece by piece. This is
+            // due to the way the client waits for data from
+            // the server. It can't accept a random sized packet.
+
+            // causes an error, so i'm commenting it out.
+//            NetworkOps.async_write( generic_map, sizeof( generic_map ) );
+            MESSAGE( "recieved C_REQUEST_MAP, method needs to be worked on." );
+        } break;
+
+        case C_BUILD_OBJECTS: {
+            int count = 0;
+            // Write Each player
+            BOOST_FOREACH( map_element i, players )
             {
-                new_packet.o_introduce.id = ((GameObject*)(i.second))->getID();
-                new_packet.o_introduce.x  = (uint32_t)((GameObject*)(i.second))->getX();
-                new_packet.o_introduce.y  = (uint32_t)((GameObject*)(i.second))->getY();
+                new_packet.o_introduce.id   = ((PlayerObject*)(i.second))->getID();
+                new_packet.o_introduce.type = (uint16_t)PlayerType;
+                new_packet.o_introduce.x    = (uint32_t)((PlayerObject*)(i.second))->getX();
+                new_packet.o_introduce.y    = (uint32_t)((PlayerObject*)(i.second))->getY();
 
                 NetworkOps.async_write( new_packet, O_INTRODUCE );
+                ++count;
             }
-            std::cerr << "Wrote " <<( new_packet.o_introduce.id+1) << " objects." << std::endl;
-            std::cerr << "recieved C_BUILD_OBJECTS, write with O_INTRODUCE" << std::endl;
-        break;
+>>>>>>> 4668f0c55ef35664624bdcd7c6b1fc66a683bfda
 
-        default:
+            BOOST_FOREACH( map_element i, objs )
+            {
+                new_packet.o_introduce.id   = ((GameObject*)(i.second))->getID();
+                new_packet.o_introduce.type = (uint16_t)OtherType;
+                new_packet.o_introduce.x    = (uint32_t)((GameObject*)(i.second))->getX();
+                new_packet.o_introduce.y    = (uint32_t)((GameObject*)(i.second))->getY();
+
+                NetworkOps.async_write( new_packet, O_INTRODUCE );
+                ++count;
+            }
+            MESSAGE( "Wrote " << count << " objects." );
+            MESSAGE( "recieved C_BUILD_OBJECTS, write with O_INTRODUCE" );
+        } break;
+
+        default: {
             // Do nothing.
-            std::cerr << "Do nothing." << std::endl;
-        break;
+            MESSAGE( "Do nothing." );
+        } break;
         }
     }
 
@@ -270,7 +315,7 @@ static void accept_handler( const boost::system::error_code &error )
 {
     if( error )
     {
-        std::cerr << "Error: " << error.message() << std::endl;
+        MESSAGE( "Error: " << error.message() );
     }
     else
     {
@@ -300,13 +345,13 @@ int s_main( int /*argc*/, char ** /*argv*/ )
 
         if( !al_init() )
         {
-            std::cerr << "Failed to initialize Allegro.\n";
+            MESSAGE( "Failed to initialize Allegro." );
             return -1;
         }
 
         if( !( server_queue = al_create_event_queue() ) )
         {
-            std::cerr << "Unable to create Allegro Event Queue.\n";
+            MESSAGE( "Unable to create Allegro Event Queue." );
             return -2;
         }
 
@@ -324,24 +369,24 @@ int s_main( int /*argc*/, char ** /*argv*/ )
         while( !should_exit )
         {
             ALLEGRO_EVENT event;
-            uint32_t tmp;
+//            uint32_t tmp;
             al_wait_for_event( server_queue, &event );
 
             switch( event.type )
             {
             case NETWORK_CONNECT:
-                std::cerr << "recieving event NETWORK_CONNECT" << std::endl;
+                MESSAGE( "recieving event NETWORK_CONNECT" );
                 // If we need to do anything when the Client connects, it goes here.
                 // For testing, we create a GameObject, and move it to 100,100.
-                tmp = ServerOps.genObject();
-                objs[ tmp ]->setX( 100 );
-                objs[ tmp ]->setY( 100 );
+//                tmp = ServerOps.genObject();
+//                objs[ tmp ]->setX( 100 );
+//                objs[ tmp ]->setY( 100 );
 
 
             break;
 
             case NETWORK_RECV:
-                std::cerr << "recieving event NETWORK_RECV" << std::endl;
+                MESSAGE( "recieving event NETWORK_RECV" );
 
                 // Do something based off what kind of packet it is.
                 ServerOps.handlePacket( (network_packet *)event.user.data1 );
@@ -351,12 +396,12 @@ int s_main( int /*argc*/, char ** /*argv*/ )
             break;
 
             case NETWORK_CLOSE:
-                std::cerr << "recieving event NETWORK_CLOSE" << std::endl;
+                MESSAGE( "recieving event NETWORK_CLOSE" );
                 should_exit = true;
             break;
 
             default:
-                std::cerr << "Ignored Event." << std::endl;
+                MESSAGE( "Ignored Event." );
             }
 
             // TODO timer
@@ -370,7 +415,7 @@ int s_main( int /*argc*/, char ** /*argv*/ )
     }
     catch( std::exception &e )
     {
-        std::cerr << e.what() << std::endl;
+        MESSAGE( e.what() );
         return -1;
     }
 
