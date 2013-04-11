@@ -26,6 +26,10 @@ boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
 std::map<uint32_t, GameObject *> objs;
+
+char*                         map;
+uint32_t                      map_height = 12;
+uint32_t                      map_width = 12;
 }
 
 class NetworkOps_
@@ -61,11 +65,21 @@ void async_write(void* data)
     if( socket->is_open() )
     {
         std::cerr << "writing packet." << std::endl;
+        std::cerr << sizeof(char) << std::endl;
+        std::cerr << "sizeof data sent is " << sizeof(data) << std::endl;
 
-        // TODO this code doesn't work becuse the sizeof throws an illegal indirection when written properly
+        // this won't work in the end
+        network_packet packet;
+        //packet.data = s_map_data;
+        packet.data2 = data;
+        packet.head.opcode = S_MAP_DATA;
+        packet.head.response_required = 0;
+        packet.head.sender_id = 0;
+
+        // xTODOx this code doesn't work becuse the sizeof throws an illegal indirection when written properly
+        // that's no longer the problem. it seems that this packet is sending the pointer and not the data itself.
         boost::asio::async_write( *socket,
-                                  boost::asio::buffer( data,
-                                                       sizeof( /* * */data ) ),
+                                  boost::asio::buffer( &packet, sizeof( packet ) ),
                                   boost::bind( &NetworkOps_::async_write_callback,
                                                this,
                                                boost::asio::placeholders::error,
@@ -149,6 +163,9 @@ public:
     {
         static uint8_t NextID = 0;
         packet_list new_packet;
+        // TODO put this in a better spot so map is saved on the server
+        char* map;
+        char* a;
 
         switch( packet->head.opcode )
         {
@@ -162,8 +179,8 @@ public:
 
         case C_READY:
             // Send the client anything that it needs. In this case, a map header.
-            new_packet.s_map_header.stage_length = 100;
-            new_packet.s_map_header.stage_height = 40;
+            new_packet.s_map_header.stage_length = map_width;
+            new_packet.s_map_header.stage_height = map_height;
 
             NetworkOps.async_write(new_packet, S_MAP_HEADER);
             std::cerr << "recieved C_READY, write with S_MAP_HEADER" << std::endl;
@@ -171,11 +188,26 @@ public:
 
         case C_REQUEST_MAP:
             //Begin sending the client a stream of map information.
-            // TODO map generation code
-            char generic_map[4000];
 
-            // causes an error, so i'm commenting it out.
-            //NetworkOps.async_write(generic_map);
+            // Init Map Data
+            map = generateMapData(map_height, map_width);
+
+            // just to look at the map
+            for (uint32_t i = 0; i < 12; i++)
+            {
+                for (uint32_t j = 0; j < 12; j++)
+                    printf("%d  ", map[i + j*12]);
+                printf("\n");
+            }
+
+            // would use this
+            // NetworkOps.async_write(map);
+
+            // using simpler instead
+            a = new char[3];
+            a[0] = 'a'; a[1] = 'a'; a[2] = 'a';
+            NetworkOps.async_write(a);
+
             std::cerr << "recieved C_REQUEST_MAP, method needs to be worked on." << std::endl;
         break;
 
@@ -217,10 +249,9 @@ public:
         uint32_t length = height * width;
         char* map = new char[length];
 
-        uint32_t i;
-        for (i=0; i<length; i++)
+        for (uint32_t i = 0; i < length; i++)
         {
-            if (i % height == height-1)
+            if (i % height == height - 1)
                 map[i] = 1;
             else
                 map[i] = 0;
@@ -288,18 +319,6 @@ int s_main( int /*argc*/, char ** /*argv*/ )
         tcp_acceptor.async_accept( *socket,
                                    boost::bind( &accept_handler,
                                                 boost::asio::placeholders::error ) );
-
-        printf("In s_main\n");
-        // Init Map Data
-        uint32_t h = 12, w = 12;
-        char* map = ServerOps.generateMapData(h, w);
-        uint32_t i, j;
-        for (i=0; i<h; i++)
-        {
-            for (j=0; j<w; j+=h)
-                printf("%d", map[j]);
-            printf("\n");
-        }
 
         // allegro event queue
         while( !should_exit )

@@ -36,6 +36,11 @@ typedef struct MAP_HEADER
     uint32_t    stage_height;
 } map_header;
 
+typedef struct MAP_DATA
+{
+    char        map[];
+} map_data;
+
 typedef struct UPDATE_OBJ
 {
     uint32_t    id;
@@ -122,6 +127,7 @@ typedef union PACKET_LIST
     client_hello        c_hello;
     server_info         s_info;
     map_header          s_map_header;
+    map_data            s_map_data;
     update_obj          o_update;
     introduce_obj       o_introduce;
     destroy_obj         o_destroy;
@@ -134,6 +140,7 @@ typedef struct NETWORK_PACKET
 {
     packet_header   head;
     packet_list     data;
+    void*           data2;
 } network_packet;
 
 

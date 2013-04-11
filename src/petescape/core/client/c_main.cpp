@@ -36,8 +36,9 @@ std::map<uint32_t, GameObject *> objs;
 
 uint8_t                       client_id;
 
-int                           map_length;
+int                           map_width;
 int                           map_height;
+char*                         map;
 }
 
 class NetworkOps_
@@ -179,26 +180,48 @@ public:
         case S_INFO:
             client_id = packet->data.s_info.client_id;
             NetOps.async_write( new_packet, C_READY );
-            std::cerr << "recieved S_INFO, sending C_READY" << std::endl;
+            std::cerr << "received S_INFO, sending C_READY" << std::endl;
         break;
         case S_MAP_HEADER:
-            map_length = packet->data.s_map_header.stage_length;
+            map_width = packet->data.s_map_header.stage_length;
             map_height = packet->data.s_map_header.stage_height;
+            std::cerr << "received S_MAP_HEADER, sending C_REQUEST_MAP and C_BUILD_OBJECTS" << std::endl;
+            std::cerr << "expecting map of size " << map_width << " x " << map_height << std::endl;
             NetOps.async_write(new_packet, C_REQUEST_MAP);
-            std::cerr << "recieved S_MAP_HEADER, sending C_REQUEST_MAP and C_BUILD_OBJECTS" << std::endl;
             NetOps.async_write(new_packet, C_BUILD_OBJECTS);
+        break;
+        case S_MAP_DATA:
+            std::cerr << "received S_MAP_DATA" << std::endl;
+            std::cerr << "i would print the map" << std::endl;
+
+            map = (char *) packet->data2;
+            std::cerr << "sizeof data: " << sizeof(map) << std::endl;
+//            std::cerr << (void *) map << std::endl;
+
+            /*
+            std::cerr << "map[0]: " << (char) map[0];
+            /*
+            for (uint32_t i = 0; i < 12; i++)
+            {
+                for (uint32_t j = 0; j < 12; j++)
+                {
+                    std::cerr << map[i + j*12];
+                }
+                std::cerr << std::endl;
+            }
+            */
         break;
         case O_INTRODUCE:
             genObject( &packet->data.o_introduce );
-            std::cerr << "recieved O_INTRODUCE" << std::endl;
+            std::cerr << "received O_INTRODUCE" << std::endl;
         break;
         case O_UPDATE:
             updateObject( &packet->data.o_update );
-            std::cerr << "recieved O_UPDATE" << std::endl;
+            std::cerr << "received O_UPDATE" << std::endl;
         break;
         case O_DESTORY:
             destroyObject( &packet->data.o_destroy );
-            std::cerr << "recieved O_DESTROY" << std::endl;
+            std::cerr << "received O_DESTROY" << std::endl;
         break;
 
         default:
