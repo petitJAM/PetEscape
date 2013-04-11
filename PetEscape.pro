@@ -39,4 +39,5 @@ HEADERS += \
     include/petescape/core/server/server.h \
     include/petescape/core/client/client.h \
     include/petescape/core/GameObject.h \
-    include/petescape/core/ObjectRenderer.h
+    include/petescape/core/ObjectRenderer.h \
+    include/petescape/core/core_defs.h

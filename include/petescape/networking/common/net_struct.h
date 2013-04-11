@@ -2,6 +2,7 @@
 #define NETWORK_PACKET_H 1
 
 #include <stdint.h>
+#include <petescape/core/core_defs.h>
 
 /**
  * Get into the right namespace.
@@ -41,6 +42,7 @@ typedef struct UPDATE_OBJ
     uint32_t    id;
     uint32_t    x;
     uint32_t    y;
+    uint16_t    type;
     uint8_t     action;
     uint8_t     facing;
 } update_obj, introduce_obj;
@@ -48,6 +50,7 @@ typedef struct UPDATE_OBJ
 typedef struct DESTROY_OBJ
 {
     uint32_t    id;
+    uint16_t    type;
 } destroy_obj;
 
 /**
