@@ -1,6 +1,8 @@
 #ifndef NETWORK_PACKET_H
 #define NETWORK_PACKET_H 1
 
+#define MAP_PACKET_SIZE 100
+
 #include <stdint.h>
 #include <petescape/core/core_defs.h>
 
@@ -36,6 +38,12 @@ typedef struct MAP_HEADER
     uint32_t    stage_length;
     uint32_t    stage_height;
 } map_header;
+
+typedef struct MAP_DATA
+{
+    uint8_t     packet_number;
+    uint8_t     data_group[MAP_PACKET_SIZE];
+} map_data;
 
 typedef struct UPDATE_OBJ
 {
@@ -125,6 +133,7 @@ typedef union PACKET_LIST
     client_hello        c_hello;
     server_info         s_info;
     map_header          s_map_header;
+    map_data            s_map_data;
     update_obj          o_update;
     introduce_obj       o_introduce;
     destroy_obj         o_destroy;

@@ -41,6 +41,8 @@ uint8_t                       client_id;
 int                           map_length;
 int                           map_height;
 uint8_t                      *map;
+
+int                           num_map_packets_recieved;
 }
 
 class NetworkOps_
@@ -204,8 +206,27 @@ public:
             map_length = packet->data.s_map_header.stage_length;
             map_height = packet->data.s_map_header.stage_height;
             NetOps.async_write(new_packet, C_REQUEST_MAP);
-            MESSAGE( "recieved S_MAP_HEADER, sending C_REQUEST_MAP and C_BUILD_OBJECTS" );
-            NetOps.async_write(new_packet, C_BUILD_OBJECTS);
+            MESSAGE( "recieved S_MAP_HEADER, sending C_REQUEST_MAP" );
+
+            //a little rough
+            num_map_packets_recieved = 0;
+            map = new uint8_t[map_height*map_length];
+        break;
+        case S_MAP_DATA:
+        {
+            //convert packets into 2-D Array
+            int data_number = packet->data.s_map_data.packet_number * MAP_PACKET_SIZE;
+            for(int i = 0; i < MAP_PACKET_SIZE; i++){
+                map[data_number + i] = packet->data.s_map_data.data_group[i];
+            }
+            MESSAGE("recieved S_MAP_DATA " << ((int)packet->data.s_map_data.packet_number));
+            num_map_packets_recieved++;
+            if(num_map_packets_recieved >= ((map_length * map_height) / MAP_PACKET_SIZE)){
+                NetOps.async_write(new_packet, C_BUILD_OBJECTS);
+                MESSAGE(num_map_packets_recieved);
+                MESSAGE( "sending C_BUILD_OBJECTS");
+            }
+        }
         break;
         case O_INTRODUCE:
             genObject( &packet->data.o_introduce );

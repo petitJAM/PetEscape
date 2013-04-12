@@ -1,6 +1,9 @@
 #ifndef CORE_DEFS_H
 #define CORE_DEFS_H
 
+#define MAP_LENGTH 100
+#define MAP_HEIGHT 40
+
 #include <iostream>
 
 #ifdef DEBUG
