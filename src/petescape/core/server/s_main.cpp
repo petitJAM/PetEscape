@@ -205,7 +205,7 @@ public:
             //Begin sending the client a stream of map information.
 
             // Init Map Data
-            map = generateMapData(map_height, map_width);
+            map = generateMapData();
 
             // just to look at the map
             for (uint32_t i = 0; i < 12; i++)
@@ -215,25 +215,16 @@ public:
                 printf("\n");
             }
 
-            // would use this
-            // NetworkOps.async_write(map);
-
-            // using simpler instead
-            map = new char[3];
-            map[0] = 'a'; map[1] = 'a'; map[2] = 'a';
-            //NetworkOps.async_write(a);
-            // TODO put map down there
-
             // TODO map generation code
             //left to right, top to bottom
-            uint8_t* generic_map = new uint8_t[map_length*map_height];
+            //uint8_t* generic_map = new uint8_t[map_length*map_height];
 
             for(int i = 0; i < map_length*map_height; i++){
-                generic_map[i] = i % MAP_PACKET_SIZE;
+                map[i] = i % MAP_PACKET_SIZE;
             }
             size_t size = map_length*map_height*sizeof(uint8_t);
 
-            NetworkOps.transfer_map(generic_map, size );
+            NetworkOps.transfer_map(map, size );
             MESSAGE( "recieved C_REQUEST_MAP, method needs to be worked on." );
         } break;
 
@@ -285,9 +276,9 @@ public:
         objs.erase( obj->getID() );
     }
 
-    uint8_t* generateMapData(uint32_t height, uint32_t width)
+    uint8_t* generateMapData()
     {
-        uint32_t length = height * width;
+        uint32_t length = MAP_LENGTH * MAP_HEIGHT;
         char* map = new char[length];
 
         for (uint32_t i = 0; i < length; i++)
