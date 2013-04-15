@@ -33,6 +33,10 @@ uint32_t                      map_width = 12;
 
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
+
+// TODO remove these
+uint8_t                       map_length;
+uint8_t                       map_height;
 }
 
 class NetworkOps_
@@ -63,37 +67,36 @@ void async_write( packet_list list, packet_id id )
     }
 }
 
-
-// DEPRECATED: We can't do this. Have to send though the
-// other function. The client expects network_packets,
-// and breaks otherwise.
-void async_write( void* data, size_t size )
+void transfer_map( uint8_t* data, size_t size )
 {
     if( socket->is_open() )
     {
-        // alex's crap
-        std::cerr << "writing packet." << std::endl;
-        std::cerr << sizeof(char) << std::endl;
-        std::cerr << "sizeof data sent is " << sizeof(data) << std::endl;
-
-        // this won't work in the end
-        network_packet packet;
-        //packet.data = s_map_data;
-        packet.data2 = data;
-        packet.head.opcode = S_MAP_DATA;
-        packet.head.response_required = 0;
-        packet.head.sender_id = 0;
-        // end alex's crap
-
-        // TODO this code doesn't work becuse the sizeof throws an illegal indirection when written properly
-        // Fixed - Neil
         MESSAGE( "writing packet." );
-        boost::asio::async_write( *socket,
-                                  boost::asio::buffer( data, size ),
-                                  boost::bind( &NetworkOps_::async_write_callback,
-                                               this,
-                                               boost::asio::placeholders::error,
-                                               boost::asio::placeholders::bytes_transferred ) );
+        MESSAGE( size );
+        int packet_number = 0;
+
+        while(packet_number < (size / MAP_PACKET_SIZE)){
+            packet_list new_packet;
+            new_packet.s_map_data.packet_number = packet_number;
+            for(int i = 0; i < MAP_PACKET_SIZE; i++){
+                new_packet.s_map_data.data_group[i] = data[packet_number * MAP_PACKET_SIZE + i];
+            }
+            async_write(new_packet, S_MAP_DATA);
+            MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
+            packet_number++;
+        }
+
+        //Might need to do one more smaller packet
+        if(packet_number * MAP_PACKET_SIZE < size){
+            packet_list new_packet;
+            new_packet.s_map_data.packet_number = packet_number;
+            int current_packet = 0;
+            while(packet_number * MAP_PACKET_SIZE + current_packet < size){
+                new_packet.s_map_data.data_group[current_packet] = data[packet_number * MAP_PACKET_SIZE + current_packet];
+            }
+            async_write(new_packet, S_MAP_DATA);
+            MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
+        }
     }
     else
     {
@@ -189,7 +192,9 @@ public:
 
         case C_READY: {
             // Send the client anything that it needs. In this case, a map header.
-            new_packet.s_map_header.stage_length = map_width;
+            map_length = MAP_LENGTH;
+            map_height = MAP_HEIGHT;
+            new_packet.s_map_header.stage_length = map_length;
             new_packet.s_map_header.stage_height = map_height;
 
             NetworkOps.async_write(new_packet, S_MAP_HEADER);
@@ -217,17 +222,18 @@ public:
             map = new char[3];
             map[0] = 'a'; map[1] = 'a'; map[2] = 'a';
             //NetworkOps.async_write(a);
+            // TODO put map down there
 
             // TODO map generation code
-            uint8_t generic_map[4000];
+            //left to right, top to bottom
+            uint8_t* generic_map = new uint8_t[map_length*map_height];
 
-            // TODO: We're going to have to split the map into
-            // sub-sections and send it piece by piece. This is
-            // due to the way the client waits for data from
-            // the server. It can't accept a random sized packet.
+            for(int i = 0; i < map_length*map_height; i++){
+                generic_map[i] = i % MAP_PACKET_SIZE;
+            }
+            size_t size = map_length*map_height*sizeof(uint8_t);
 
-            // causes an error, so i'm commenting it out.
-//            NetworkOps.async_write( generic_map, sizeof( generic_map ) );
+            NetworkOps.transfer_map(generic_map, size );
             MESSAGE( "recieved C_REQUEST_MAP, method needs to be worked on." );
         } break;
 
@@ -244,7 +250,6 @@ public:
                 NetworkOps.async_write( new_packet, O_INTRODUCE );
                 ++count;
             }
->>>>>>> 4668f0c55ef35664624bdcd7c6b1fc66a683bfda
 
             BOOST_FOREACH( map_element i, objs )
             {
