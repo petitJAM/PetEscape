@@ -26,16 +26,13 @@ boost::asio::io_service       server_io_service;
 boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
-<<<<<<< HEAD
-std::map<uint32_t, GameObject *> objs;
 
-char*                         map;
+uint8_t                      *map;
 uint32_t                      map_height = 12;
 uint32_t                      map_width = 12;
-=======
+
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
->>>>>>> 4668f0c55ef35664624bdcd7c6b1fc66a683bfda
 }
 
 class NetworkOps_
@@ -176,8 +173,6 @@ public:
     {
         packet_list new_packet;
         // TODO put this in a better spot so map is saved on the server
-        char* map;
-        char* a;
 
         switch( packet->head.opcode )
         {
@@ -203,7 +198,6 @@ public:
 
         case C_REQUEST_MAP: {
             //Begin sending the client a stream of map information.
-<<<<<<< HEAD
 
             // Init Map Data
             map = generateMapData(map_height, map_width);
@@ -220,13 +214,10 @@ public:
             // NetworkOps.async_write(map);
 
             // using simpler instead
-            a = new char[3];
-            a[0] = 'a'; a[1] = 'a'; a[2] = 'a';
-            NetworkOps.async_write(a);
+            map = new char[3];
+            map[0] = 'a'; map[1] = 'a'; map[2] = 'a';
+            //NetworkOps.async_write(a);
 
-            std::cerr << "recieved C_REQUEST_MAP, method needs to be worked on." << std::endl;
-        break;
-=======
             // TODO map generation code
             uint8_t generic_map[4000];
 
@@ -289,7 +280,7 @@ public:
         objs.erase( obj->getID() );
     }
 
-    char* generateMapData(uint32_t height, uint32_t width)
+    uint8_t* generateMapData(uint32_t height, uint32_t width)
     {
         uint32_t length = height * width;
         char* map = new char[length];

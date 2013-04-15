@@ -40,11 +40,7 @@ uint8_t                       client_id;
 
 int                           map_width;
 int                           map_height;
-<<<<<<< HEAD
-char*                         map;
-=======
 uint8_t                      *map;
->>>>>>> 4668f0c55ef35664624bdcd7c6b1fc66a683bfda
 }
 
 class NetworkOps_
@@ -217,7 +213,7 @@ public:
             std::cerr << "received S_MAP_DATA" << std::endl;
             std::cerr << "i would print the map" << std::endl;
 
-            map = (char *) packet->data2;
+            map = (uint8_t *) packet->data2;
             std::cerr << "sizeof data: " << sizeof(map) << std::endl;
 //            std::cerr << (void *) map << std::endl;
 
