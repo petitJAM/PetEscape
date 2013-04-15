@@ -27,14 +27,12 @@ boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
 
+// TODO question the existence of this
 uint8_t                      *map;
-uint32_t                      map_height = 12;
-uint32_t                      map_width = 12;
 
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
 
-// TODO remove these
 uint8_t                       map_length;
 uint8_t                       map_height;
 }
@@ -208,14 +206,13 @@ public:
             map = generateMapData();
 
             // just to look at the map
-            for (uint32_t i = 0; i < 12; i++)
+            for (uint32_t i = 0; i < MAP_HEIGHT; i++)
             {
-                for (uint32_t j = 0; j < 12; j++)
-                    printf("%d  ", map[i + j*12]);
+                for (uint32_t j = 0; j < MAP_LENGTH; j++)
+                    printf("%d", map[i + j*MAP_HEIGHT]);
                 printf("\n");
             }
 
-            // TODO map generation code
             //left to right, top to bottom
             //uint8_t* generic_map = new uint8_t[map_length*map_height];
 
@@ -279,11 +276,11 @@ public:
     uint8_t* generateMapData()
     {
         uint32_t length = MAP_LENGTH * MAP_HEIGHT;
-        char* map = new char[length];
+        uint8_t* map = new uint8_t[length];
 
         for (uint32_t i = 0; i < length; i++)
         {
-            if (i % height == height - 1)
+            if (i % MAP_HEIGHT == MAP_HEIGHT - 1)
                 map[i] = 1;
             else
                 map[i] = 0;

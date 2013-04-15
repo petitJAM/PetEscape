@@ -38,8 +38,8 @@ std::map<uint32_t, PlayerObject *> players;
 
 uint8_t                       client_id;
 
-int                           map_width;
-int                           map_height;
+uint8_t                       map_length;
+uint8_t                       map_height;
 uint8_t                      *map;
 
 int                           num_map_packets_recieved;
@@ -203,10 +203,10 @@ public:
             MESSAGE( "recieved S_INFO, sending C_READY" );
         break;
         case S_MAP_HEADER:
-            map_width = packet->data.s_map_header.stage_length;
+            map_length = packet->data.s_map_header.stage_length;
             map_height = packet->data.s_map_header.stage_height;
             std::cerr << "received S_MAP_HEADER, sending C_REQUEST_MAP and C_BUILD_OBJECTS" << std::endl;
-            std::cerr << "expecting map of size " << map_width << " x " << map_height << std::endl;
+            std::cerr << "expecting map of size " << (int) map_length << " x " << (int) map_height << std::endl;
             NetOps.async_write(new_packet, C_REQUEST_MAP);
             MESSAGE( "recieved S_MAP_HEADER, sending C_REQUEST_MAP" );
 
@@ -229,27 +229,6 @@ public:
                 MESSAGE( "sending C_BUILD_OBJECTS");
             }
         }
-        break;
-        case S_MAP_DATA:
-            std::cerr << "received S_MAP_DATA" << std::endl;
-            std::cerr << "i would print the map" << std::endl;
-
-            map = (uint8_t *) packet->data2;
-            std::cerr << "sizeof data: " << sizeof(map) << std::endl;
-//            std::cerr << (void *) map << std::endl;
-
-            /*
-            std::cerr << "map[0]: " << (char) map[0];
-            /*
-            for (uint32_t i = 0; i < 12; i++)
-            {
-                for (uint32_t j = 0; j < 12; j++)
-                {
-                    std::cerr << map[i + j*12];
-                }
-                std::cerr << std::endl;
-            }
-            */
         break;
         case O_INTRODUCE:
             genObject( &packet->data.o_introduce );
