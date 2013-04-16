@@ -53,7 +53,6 @@ void async_write( packet_list list, packet_id id )
 {
     if( socket->is_open() )
     {
-        MESSAGE( "writing packet." );
         network_packet packet;
         packet.data = list;
         packet.head.opcode = id;
@@ -123,8 +122,6 @@ void async_read_callback( const boost::system::error_code &error, size_t /*trans
 
         event.type = NETWORK_RECV;
         event.user.data1 = (intptr_t)packet;
-
-        MESSAGE( "Got packet." );
     }
 
     al_emit_user_event( &network_event_source, &event, nullptr );
@@ -223,16 +220,23 @@ public:
             }
             MESSAGE("recieved S_MAP_DATA " << ((int)packet->data.s_map_data.packet_number));
             num_map_packets_recieved++;
+
+            // all packets received
             if(num_map_packets_recieved >= ((map_length * map_height) / MAP_PACKET_SIZE)){
                 NetOps.async_write(new_packet, C_BUILD_OBJECTS);
-                MESSAGE(num_map_packets_recieved);
                 MESSAGE( "sending C_BUILD_OBJECTS");
+
+                for (uint32_t i = 0; i < MAP_HEIGHT; i++)
+                {
+                    for (uint32_t j = 0; j < MAP_LENGTH; j++)
+                        printf("%d", map[i + j*MAP_HEIGHT]);
+                    printf("\n");
+                }
             }
         }
         break;
         case O_INTRODUCE:
             genObject( &packet->data.o_introduce );
-
             MESSAGE( "recieved O_INTRODUCE" );
         break;
         case O_UPDATE:

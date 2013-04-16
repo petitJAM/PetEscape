@@ -45,7 +45,6 @@ void async_write( packet_list list, packet_id id )
 {
     if( socket->is_open() )
     {
-        MESSAGE( "writing packet." );
         network_packet packet;
         packet.data = list;
         packet.head.opcode = id;
@@ -215,14 +214,10 @@ public:
 
             //left to right, top to bottom
             //uint8_t* generic_map = new uint8_t[map_length*map_height];
-
-            for(int i = 0; i < map_length*map_height; i++){
-                map[i] = i % MAP_PACKET_SIZE;
-            }
             size_t size = map_length*map_height*sizeof(uint8_t);
 
             NetworkOps.transfer_map(map, size );
-            MESSAGE( "recieved C_REQUEST_MAP, method needs to be worked on." );
+            MESSAGE( "recieved C_REQUEST_MAP" );
         } break;
 
         case C_BUILD_OBJECTS: {
@@ -278,12 +273,36 @@ public:
         uint32_t length = MAP_LENGTH * MAP_HEIGHT;
         uint8_t* map = new uint8_t[length];
 
+        // gens map like this (with different size):
+        // 00000
+        // 00000
+        // 11111
         for (uint32_t i = 0; i < length; i++)
         {
             if (i % MAP_HEIGHT == MAP_HEIGHT - 1)
                 map[i] = 1;
             else
                 map[i] = 0;
+        }
+
+        // seed rand
+        srand(123456);
+        // populate with random platforms
+        int n_plats = rand() % 50, plat_len, plat_x, plat_y;
+
+        if (MAP_LENGTH > 10)
+        {
+            for (int i = 0; i<n_plats; i++)
+            {
+                plat_len = rand() % 5;
+                plat_x = (rand() % (MAP_LENGTH - 10)) + 5; // how far over
+                plat_y = (rand() % (MAP_HEIGHT - 10)) + 2; // how far up
+
+                for (int j = 0; j<plat_len; j++)
+                {
+                    map[plat_y + ((plat_x + j - 1) * MAP_HEIGHT)] = 1;
+                }
+            }
         }
 
         return map;
