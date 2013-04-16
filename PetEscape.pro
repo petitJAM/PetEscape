@@ -28,6 +28,7 @@ SOURCES += \
     src/petescape/core/server/s_main.cpp \
     src/petescape/core/GameObject.cpp \
     src/petescape/core/ObjectRenderer.cpp \
+    src/petescape/core/GameMap.cpp
 
 HEADERS += \
 #    include/petescape/networking/client/ClientConnection.h \
@@ -40,4 +41,5 @@ HEADERS += \
     include/petescape/core/client/client.h \
     include/petescape/core/GameObject.h \
     include/petescape/core/ObjectRenderer.h \
-    include/petescape/core/core_defs.h
+    include/petescape/core/core_defs.h \
+    include/petescape/core/GameMap.h

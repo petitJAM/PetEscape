@@ -257,7 +257,7 @@ namespace {
 GameOps_   GameOps;
 }
 
-int c_main( int argc, char **argv )
+int c_main( int /*argc*/, char **argv )
 {
     boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
     boost::asio::ip::tcp::resolver::query tcp_query( argv[2], "2001" );
