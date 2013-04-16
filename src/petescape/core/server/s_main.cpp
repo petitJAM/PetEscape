@@ -70,7 +70,7 @@ void transfer_map( uint8_t* data, size_t size )
     {
         MESSAGE( "writing packet." );
         MESSAGE( size );
-        int packet_number = 0;
+        unsigned int packet_number = 0;
 
         while(packet_number < (size / MAP_PACKET_SIZE)){
             packet_list new_packet;
@@ -87,7 +87,7 @@ void transfer_map( uint8_t* data, size_t size )
         if(packet_number * MAP_PACKET_SIZE < size){
             packet_list new_packet;
             new_packet.s_map_data.packet_number = packet_number;
-            int current_packet = 0;
+            unsigned int current_packet = 0;
             while(packet_number * MAP_PACKET_SIZE + current_packet < size){
                 new_packet.s_map_data.data_group[current_packet] = data[packet_number * MAP_PACKET_SIZE + current_packet];
             }
