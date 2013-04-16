@@ -15,6 +15,8 @@ class GameMap
 public:
     GameMap( const uint32_t &row_count, const uint32_t &col_count );
 
+    ~GameMap();
+
     inline const uint8_t getValue( const uint32_t &row, const uint32_t &column ) const;
 
     inline void setValue( const uint32_t &row, const uint32_t &column, const uint8_t &value );

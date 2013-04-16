@@ -40,7 +40,7 @@ uint8_t                       client_id;
 
 uint8_t                       map_length;
 uint8_t                       map_height;
-uint8_t                      *map;
+GameMap                      *map;
 
 int                           num_map_packets_recieved;
 }
@@ -212,7 +212,7 @@ public:
 
             //a little rough
             num_map_packets_recieved = 0;
-            map = new uint8_t[map_height*map_length];
+            map = new GameMap(map_length, map_height);
         break;
         case S_MAP_DATA:
         {
