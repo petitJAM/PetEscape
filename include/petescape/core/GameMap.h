@@ -17,11 +17,19 @@ public:
 
     ~GameMap();
 
+    void generate();
+
     inline const uint8_t getValue( const uint32_t &row, const uint32_t &column ) const;
 
     inline void setValue( const uint32_t &row, const uint32_t &column, const uint8_t &value );
 
     void addChunk( const map_data &data );
+
+    void populateChunk(map_data &data);
+
+    inline const uint8_t getHeight();
+    inline const uint8_t getLength();
+    inline const size_t getSize();
 
 private:
     uint32_t    m_row_count;

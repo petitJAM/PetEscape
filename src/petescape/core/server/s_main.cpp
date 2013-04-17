@@ -2,6 +2,7 @@
 #include "petescape/core/server/server.h"
 #include "petescape/core/core_defs.h"
 #include "petescape/networking/common/net_struct.h"
+#include "petescape/core/GameMap.h"
 //#include "petescape/networking/server/ServerConnection.h"
 
 #include <boost/bind.hpp>
@@ -27,8 +28,7 @@ boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
 
-// TODO question the existence of this
-uint8_t                      *map;
+GameMap                       map;
 
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
@@ -45,7 +45,6 @@ void async_write( packet_list list, packet_id id )
 {
     if( socket->is_open() )
     {
-        MESSAGE( "writing packet." );
         network_packet packet;
         packet.data = list;
         packet.head.opcode = id;
@@ -65,27 +64,38 @@ void async_write( packet_list list, packet_id id )
     }
 }
 
-void transfer_map( uint8_t* data, size_t size )
+void transfer_map(GameMap map)
 {
     if( socket->is_open() )
     {
         MESSAGE( "writing packet." );
-        MESSAGE( size );
+        MESSAGE( map.getSize() );
         unsigned int packet_number = 0;
 
-        while(packet_number < (size / MAP_PACKET_SIZE)){
+        while(packet_number * MAP_PACKET_SIZE < map.getSize()){
             packet_list new_packet;
             new_packet.s_map_data.packet_number = packet_number;
-            for(int i = 0; i < MAP_PACKET_SIZE; i++){
-                new_packet.s_map_data.data_group[i] = data[packet_number * MAP_PACKET_SIZE + i];
-            }
+
+            map.populateChunk(new_packet.s_map_data);
+
+            async_write(new_packet, S_MAP_DATA);
+            MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
+            packet_number++;
+        }
+        /*
+        while(packet_number < (map.getSize() / MAP_PACKET_SIZE)){
+            packet_list new_packet;
+            new_packet.s_map_data.packet_number = packet_number;
+
+            map.populateChunk(new_packet.s_map_data);
+
             async_write(new_packet, S_MAP_DATA);
             MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
             packet_number++;
         }
 
         //Might need to do one more smaller packet
-        if(packet_number * MAP_PACKET_SIZE < size){
+        if(packet_number * MAP_PACKET_SIZE < map.getSize()){
             packet_list new_packet;
             new_packet.s_map_data.packet_number = packet_number;
             unsigned int current_packet = 0;
@@ -95,6 +105,7 @@ void transfer_map( uint8_t* data, size_t size )
             async_write(new_packet, S_MAP_DATA);
             MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
         }
+        */
     }
     else
     {
@@ -201,28 +212,22 @@ public:
 
         case C_REQUEST_MAP: {
             //Begin sending the client a stream of map information.
-
+            map = GameMap::GameMap(map_height, map_length);
             // Init Map Data
-            map = generateMapData();
+            map.generate();
 
-            // just to look at the map
+            // just to look at the map - broken at the moment.
+            /*
             for (uint32_t i = 0; i < MAP_HEIGHT; i++)
             {
                 for (uint32_t j = 0; j < MAP_LENGTH; j++)
-                    printf("%d", map[i + j*MAP_HEIGHT]);
+                    printf("%d", map.getValue(j, i));
                 printf("\n");
             }
+            */
+            NetworkOps.transfer_map(map);
 
-            //left to right, top to bottom
-            //uint8_t* generic_map = new uint8_t[map_length*map_height];
-
-            for(int i = 0; i < map_length*map_height; i++){
-                map[i] = i % MAP_PACKET_SIZE;
-            }
-            size_t size = map_length*map_height*sizeof(uint8_t);
-
-            NetworkOps.transfer_map(map, size );
-            MESSAGE( "recieved C_REQUEST_MAP, method needs to be worked on." );
+            MESSAGE( "recieved C_REQUEST_MAP" );
         } break;
 
         case C_BUILD_OBJECTS: {
@@ -278,12 +283,36 @@ public:
         uint32_t length = MAP_LENGTH * MAP_HEIGHT;
         uint8_t* map = new uint8_t[length];
 
+        // gens map like this (with different size):
+        // 00000
+        // 00000
+        // 11111
         for (uint32_t i = 0; i < length; i++)
         {
             if (i % MAP_HEIGHT == MAP_HEIGHT - 1)
                 map[i] = 1;
             else
                 map[i] = 0;
+        }
+
+        // seed rand
+        srand(123456);
+        // populate with random platforms
+        int n_plats = rand() % 50, plat_len, plat_x, plat_y;
+
+        if (MAP_LENGTH > 10)
+        {
+            for (int i = 0; i<n_plats; i++)
+            {
+                plat_len = rand() % 5;
+                plat_x = (rand() % (MAP_LENGTH - 10)) + 5; // how far over
+                plat_y = (rand() % (MAP_HEIGHT - 10)) + 2; // how far up
+
+                for (int j = 0; j<plat_len; j++)
+                {
+                    map[plat_y + ((plat_x + j - 1) * MAP_HEIGHT)] = 1;
+                }
+            }
         }
 
         return map;
