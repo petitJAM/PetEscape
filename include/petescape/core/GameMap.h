@@ -23,11 +23,13 @@ public:
 
     void addChunk( const map_data &data );
 
+    void display ();
+
 private:
     uint32_t    m_row_count;
     uint32_t    m_col_count;
+    uint32_t    m_data_length;
     uint8_t     *m_data;
-    uint8_t     data_length;
     bool        generated;
 };
 

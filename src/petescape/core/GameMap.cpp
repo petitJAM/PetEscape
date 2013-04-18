@@ -60,28 +60,38 @@ void GameMap::generate(uint32_t seed)
     srand(123456);
 
     // populate with random platforms
-    int n_plats = rand() % 50, plat_len, plat_x, plat_y;
+//    int n_plats = rand() % 50, plat_len, plat_x, plat_y;
 
-    if (m_col_count > 10)
+//    if (m_col_count > 10)
+//    {
+//        for (int i = 0; i<n_plats; i++)
+//        {
+//            plat_len = rand() % 5;
+//            plat_x = (rand() % (m_col_count - 10)) + 5; // how far over
+//            plat_y = (rand() % (m_row_count - 10)) + 2; // how far up
+
+//            for (int j = 0; j<plat_len; j++)
+//            {
+//                // TODO update this too...
+//                m_data[plat_y + ((plat_x + j - 1) * m_row_count)] = 1;
+//            }
+//        }
+//    }
+}
+
+void GameMap::display()
+{
+    for (uint32_t i = 0; i < m_row_count; i++)
     {
-        for (int i = 0; i<n_plats; i++)
-        {
-            plat_len = rand() % 5;
-            plat_x = (rand() % (m_col_count - 10)) + 5; // how far over
-            plat_y = (rand() % (m_row_count - 10)) + 2; // how far up
-
-            for (int j = 0; j<plat_len; j++)
-            {
-                // TODO update this too...
-                m_data[plat_y + ((plat_x + j - 1) * m_row_count)] = 1;
-            }
-        }
+        for (uint32_t j = 0; j < m_col_count; j++)
+            printf("%d", map[i + j*m_row_count]);
+        printf("\n");
     }
 }
 
 const uint8_t GameMap::getValue(const uint32_t &row, const uint32_t &column) const
 {
-    return m_data[ row * m_row_count + column ];
+    return m_data[ row + column * m_col_count ];
 }
 
 void GameMap::setValue(const uint32_t &row, const uint32_t &column, const uint8_t &value)

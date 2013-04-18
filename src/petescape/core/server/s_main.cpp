@@ -2,6 +2,7 @@
 #include "petescape/core/server/server.h"
 #include "petescape/core/core_defs.h"
 #include "petescape/networking/common/net_struct.h"
+#include "petescape/core/GameMap.h"
 //#include "petescape/networking/server/ServerConnection.h"
 
 #include <boost/bind.hpp>
@@ -27,11 +28,10 @@ boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
 
-// TODO question the existence of this
-uint8_t                      *map;
-
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
+
+GameMap                      *map;
 
 uint8_t                       map_length;
 uint8_t                       map_height;
@@ -202,21 +202,18 @@ public:
             //Begin sending the client a stream of map information.
 
             // Init Map Data
-            map = generateMapData();
+            // map = generateMapData();
+                map = new GameMap(MAP_HEIGHT, MAP_LENGTH);
+            map->generate(12345);
 
             // just to look at the map
-            for (uint32_t i = 0; i < MAP_HEIGHT; i++)
-            {
-                for (uint32_t j = 0; j < MAP_LENGTH; j++)
-                    printf("%d", map[i + j*MAP_HEIGHT]);
-                printf("\n");
-            }
+            map->display();
 
             //left to right, top to bottom
             //uint8_t* generic_map = new uint8_t[map_length*map_height];
             size_t size = map_length*map_height*sizeof(uint8_t);
 
-            NetworkOps.transfer_map(map, size );
+            //NetworkOps.transfer_map(map, size );
             MESSAGE( "recieved C_REQUEST_MAP" );
         } break;
 
