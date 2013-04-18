@@ -41,7 +41,7 @@ uint8_t                       client_id;
 
 uint8_t                       map_length;
 uint8_t                       map_height;
-GameMap                       map;
+GameMap                       *map;
 
 int                           num_map_packets_recieved;
 }
@@ -203,14 +203,14 @@ public:
         case S_MAP_HEADER:
             map_length = packet->data.s_map_header.stage_length;
             map_height = packet->data.s_map_header.stage_height;
-            std::cerr << "received S_MAP_HEADER, sending C_REQUEST_MAP and C_BUILD_OBJECTS" << std::endl;
-            std::cerr << "expecting map of size " << (int) map_length << " x " << (int) map_height << std::endl;
-            NetOps.async_write(new_packet, C_REQUEST_MAP);
             MESSAGE( "recieved S_MAP_HEADER, sending C_REQUEST_MAP" );
+            MESSAGE("expecting map of size " << (int) map_length << " x " << (int) map_height);
 
             //a little rough
             num_map_packets_recieved = 0;
-            map = new GameMap::GameMap(map_height, map_length);
+            map = new GameMap(map_height, map_length);
+
+            NetOps.async_write(new_packet, C_REQUEST_MAP);
         break;
         case S_MAP_DATA:
         {
@@ -219,7 +219,7 @@ public:
             for(int i = 0; i < MAP_PACKET_SIZE; i++){
                 map[data_number + i] = packet->data.s_map_data.data_group[i];
             }*/
-            map.addChunk(packet->data.s_map_data);
+            map->addChunk(packet->data.s_map_data);
 
             MESSAGE("recieved S_MAP_DATA " << ((int)packet->data.s_map_data.packet_number));
             num_map_packets_recieved++;

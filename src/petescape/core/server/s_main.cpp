@@ -28,7 +28,7 @@ boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
 
-GameMap                       map;
+GameMap                       *map;
 
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
@@ -64,20 +64,24 @@ void async_write( packet_list list, packet_id id )
     }
 }
 
-void transfer_map(GameMap map)
+void transfer_map(GameMap *map)
 {
     if( socket->is_open() )
     {
         MESSAGE( "writing packet." );
-        MESSAGE( map.getSize() );
+        MESSAGE( map->getSize() );
         unsigned int packet_number = 0;
 
-        while(packet_number * MAP_PACKET_SIZE < map.getSize()){
+        for( int i = 0; i < map->getSize(); i+=MAP_PACKET_SIZE )
+        {
+//        while(packet_number * MAP_PACKET_SIZE < map->getSize()){
             packet_list new_packet;
-            new_packet.s_map_data.packet_number = packet_number;
+            new_packet.s_map_data.packet_number = i/MAP_PACKET_SIZE;
 
-            map.populateChunk(new_packet.s_map_data);
+            map->populateChunk(new_packet.s_map_data);
 
+            MESSAGE((int)new_packet.s_map_data.packet_number);
+            MESSAGE((int)new_packet.s_map_data.data_group[0] << " bap " << (int)new_packet.s_map_data.data_group[MAP_PACKET_SIZE - 1]);
             async_write(new_packet, S_MAP_DATA);
             MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
             packet_number++;
@@ -212,19 +216,18 @@ public:
 
         case C_REQUEST_MAP: {
             //Begin sending the client a stream of map information.
-            map = GameMap::GameMap(map_height, map_length);
+            map = new GameMap(map_height, map_length);
+            MESSAGE(map->getSize());
             // Init Map Data
-            map.generate();
+            map->generate();
 
             // just to look at the map - broken at the moment.
-            /*
-            for (uint32_t i = 0; i < MAP_HEIGHT; i++)
-            {
-                for (uint32_t j = 0; j < MAP_LENGTH; j++)
-                    printf("%d", map.getValue(j, i));
-                printf("\n");
-            }
-            */
+//            for (uint32_t i = 0; i < MAP_HEIGHT; i++)
+//            {
+//                for (uint32_t j = 0; j < MAP_LENGTH; j++)
+//                    MESSAGE(map->getValue(j, i) << " ");
+//            }
+
             NetworkOps.transfer_map(map);
 
             MESSAGE( "recieved C_REQUEST_MAP" );
