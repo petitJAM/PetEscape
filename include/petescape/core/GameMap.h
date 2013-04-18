@@ -13,11 +13,14 @@ class GameMap
 {
 
 public:
-    GameMap( const uint32_t &row_count, const uint32_t &col_count );
+    GameMap( const uint32_t &height, const uint32_t &length );
 
-    void generate(uint32_t seed);
+    ~GameMap();
 
-    inline const uint8_t getValue( const uint32_t &row, const uint32_t &column ) const;
+    void generate();
+    //void generate(uint32_t seed);
+
+    const uint8_t getValue( const uint32_t &row, const uint32_t &column ) const;
 
     inline void setValue( const uint32_t &row, const uint32_t &column, const uint8_t &value );
 
@@ -25,10 +28,15 @@ public:
 
     void display ();
 
+    void populateChunk(map_data &data);
+
+    inline const uint8_t getHeight();
+    inline const uint8_t getLength();
+    inline const size_t getSize();
+
 private:
-    uint32_t    m_row_count;
-    uint32_t    m_col_count;
-    uint32_t    m_data_length;
+    uint32_t    m_height;
+    uint32_t    m_length;
     uint8_t     *m_data;
     bool        generated;
 };

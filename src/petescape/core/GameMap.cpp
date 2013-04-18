@@ -4,20 +4,19 @@
 namespace petescape {
 namespace core {
 
-GameMap::GameMap(const uint32_t &row_count, const uint32_t &col_count) :
-    m_row_count( row_count ),
-    m_col_count( col_count )
+GameMap::GameMap(const uint32_t &height, const uint32_t &length) :
+    m_height( height ),
+    m_length( length )
 {
     generated = false,
-    m_data_length = m_row_count * m_col_count,
-    m_data = (uint8_t*)malloc( sizeof( uint8_t ) * m_row_count * m_col_count );
+    m_data = (uint8_t*)malloc( sizeof( uint8_t ) * m_height * m_length );
 }
 
-// gens map like this (with different size):
-// 00000
-// 00000
-// 11111
-
+//frees the array inside the object - may not be necessary
+GameMap::~GameMap()
+{
+    free(m_data);
+}
 
 /*
  *  Generate the data for this map using (not yet) the given seed
@@ -39,25 +38,22 @@ GameMap::GameMap(const uint32_t &row_count, const uint32_t &col_count) :
  *  Ignored:
  *      @param - seed
  */
-void GameMap::generate(uint32_t seed)
-{
+// TODO add seed parameter
+void GameMap::generate(){
     if (generated) {
         MESSAGE( "Warning: Map already generated, will not generate again.");
         return;
     }
 
-    // TODO update this...
-    for (uint32_t i = 0; i < m_data_length; i++)
-    {
-        if (i % m_col_count == m_col_count - 1)
+    for(uint32_t i = 0; i < getSize(); i++){
+        if(i % m_length == m_length - 1)
             m_data[i] = 1;
         else
             m_data[i] = 0;
     }
-
     // seed rand
     // srand(123456);
-    srand(123456);
+    // srand(123456);
 
     // populate with random platforms
 //    int n_plats = rand() % 50, plat_len, plat_x, plat_y;
@@ -81,30 +77,78 @@ void GameMap::generate(uint32_t seed)
 
 void GameMap::display()
 {
-    for (uint32_t i = 0; i < m_row_count; i++)
+    for (uint32_t i = 0; i < m_height; i++)
     {
-        for (uint32_t j = 0; j < m_col_count; j++)
-            printf("%d", map[i + j*m_row_count]);
+        for (uint32_t j = 0; j < m_length; j++)
+            printf("%d", m_data[i + j*m_height]);
         printf("\n");
     }
 }
 
 const uint8_t GameMap::getValue(const uint32_t &row, const uint32_t &column) const
 {
-    return m_data[ row + column * m_col_count ];
+    if(row >= m_height || column >= m_length){
+        //MESSAGE("INVALID ROW/COLUMN INPUT");
+        return -1;
+    }
+    else{
+        return m_data[ column * m_length + row ];
+    }
 }
 
 void GameMap::setValue(const uint32_t &row, const uint32_t &column, const uint8_t &value)
 {
-    m_data[ row * m_row_count + column ] = value;
+    if(row >= m_height || column >= m_length){
+        //MESSAGE("INVALID ROW/COLUMN INPUT");
+    }
+    else{
+        m_data[ column * m_length + row ] = value;
+    }
 }
 
 void GameMap::addChunk(const map_data &data)
 {
-    for( int i = 0; i < MAP_PACKET_SIZE; ++i )
-    {
-        m_data[ MAP_PACKET_SIZE * data.packet_number + data.data_group[ i ] ];
+    //to be sure it's a full sized packet
+    if((data.packet_number + 1) * MAP_PACKET_SIZE < getSize()){
+        for( uint32_t i = 0; i < MAP_PACKET_SIZE; ++i )
+        {
+            m_data[ MAP_PACKET_SIZE * data.packet_number + i] = data.data_group[ i ];
+        }
     }
+    else{
+
+        for(uint32_t i = 0; i < (getSize() - data.packet_number * MAP_PACKET_SIZE); i++){
+            m_data[data.packet_number * MAP_PACKET_SIZE + i] = data.data_group[i];
+        }
+    }
+}
+
+void GameMap::populateChunk(map_data &data){
+    //to be sure it's a full sized packet
+    if((data.packet_number + 1) * MAP_PACKET_SIZE < getSize()){
+        MESSAGE("ENTERING ME");
+        for(uint32_t i = 0; i < MAP_PACKET_SIZE; i++){
+            MESSAGE((int)(m_data[data.packet_number * MAP_PACKET_SIZE + i]));
+            data.data_group[i] = m_data[data.packet_number * MAP_PACKET_SIZE + i];
+        }
+    }
+    else {
+        for(uint32_t i = 0; i < (getSize() - data.packet_number * MAP_PACKET_SIZE); i++){
+            data.data_group[i] = m_data[data.packet_number * MAP_PACKET_SIZE + i];
+        }
+    }
+}
+
+const uint8_t GameMap::getHeight(){
+    return m_height;
+}
+
+const uint8_t GameMap::getLength(){
+    return m_length;
+}
+
+const size_t GameMap::getSize(){
+    return m_height*m_length/**sizeof(uint8_t)*/;
 }
 
 }}

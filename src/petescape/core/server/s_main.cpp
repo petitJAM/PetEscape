@@ -64,27 +64,42 @@ void async_write( packet_list list, packet_id id )
     }
 }
 
-void transfer_map( uint8_t* data, size_t size )
+void transfer_map(GameMap *map)
 {
     if( socket->is_open() )
     {
         MESSAGE( "writing packet." );
-        MESSAGE( size );
+        MESSAGE( map->getSize() );
         unsigned int packet_number = 0;
 
-        while(packet_number < (size / MAP_PACKET_SIZE)){
+        for( int i = 0; i < map->getSize(); i+=MAP_PACKET_SIZE )
+        {
+//        while(packet_number * MAP_PACKET_SIZE < map->getSize()){
+            packet_list new_packet;
+            new_packet.s_map_data.packet_number = i/MAP_PACKET_SIZE;
+
+            map->populateChunk(new_packet.s_map_data);
+
+            MESSAGE((int)new_packet.s_map_data.packet_number);
+            MESSAGE((int)new_packet.s_map_data.data_group[0] << " bap " << (int)new_packet.s_map_data.data_group[MAP_PACKET_SIZE - 1]);
+            async_write(new_packet, S_MAP_DATA);
+            MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
+            packet_number++;
+        }
+        /*
+        while(packet_number < (map.getSize() / MAP_PACKET_SIZE)){
             packet_list new_packet;
             new_packet.s_map_data.packet_number = packet_number;
-            for(int i = 0; i < MAP_PACKET_SIZE; i++){
-                new_packet.s_map_data.data_group[i] = data[packet_number * MAP_PACKET_SIZE + i];
-            }
+
+            map.populateChunk(new_packet.s_map_data);
+
             async_write(new_packet, S_MAP_DATA);
             MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
             packet_number++;
         }
 
         //Might need to do one more smaller packet
-        if(packet_number * MAP_PACKET_SIZE < size){
+        if(packet_number * MAP_PACKET_SIZE < map.getSize()){
             packet_list new_packet;
             new_packet.s_map_data.packet_number = packet_number;
             unsigned int current_packet = 0;
@@ -94,6 +109,7 @@ void transfer_map( uint8_t* data, size_t size )
             async_write(new_packet, S_MAP_DATA);
             MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
         }
+        */
     }
     else
     {
@@ -200,20 +216,22 @@ public:
 
         case C_REQUEST_MAP: {
             //Begin sending the client a stream of map information.
-
+            map = new GameMap(map_height, map_length);
+            MESSAGE(map->getSize());
             // Init Map Data
-            // map = generateMapData();
-                map = new GameMap(MAP_HEIGHT, MAP_LENGTH);
-            map->generate(12345);
+            map->generate();
 
             // just to look at the map
             map->display();
 
-            //left to right, top to bottom
-            //uint8_t* generic_map = new uint8_t[map_length*map_height];
-            size_t size = map_length*map_height*sizeof(uint8_t);
+            // just to look at the map - broken at the moment.
+//            for (uint32_t i = 0; i < MAP_HEIGHT; i++)
+//            {
+//                for (uint32_t j = 0; j < MAP_LENGTH; j++)
+//                    MESSAGE(map->getValue(j, i) << " ");
+//            }
 
-            //NetworkOps.transfer_map(map, size );
+            NetworkOps.transfer_map(map);
             MESSAGE( "recieved C_REQUEST_MAP" );
         } break;
 
