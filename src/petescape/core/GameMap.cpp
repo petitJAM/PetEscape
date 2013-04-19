@@ -9,7 +9,7 @@ GameMap::GameMap(const uint32_t &height, const uint32_t &length) :
     m_length( length )
 {
     generated = false,
-    m_data = (uint8_t*)malloc( sizeof( uint8_t ) * m_height * m_length );
+    m_data = (uint16_t*)malloc( sizeof( uint16_t ) * m_height * m_length );
 }
 
 //frees the array inside the object - may not be necessary
@@ -78,7 +78,7 @@ void GameMap::generate(){
     }
 }
 
-const uint8_t GameMap::getValue(const uint32_t &x, const uint32_t &y) const
+const uint16_t GameMap::getValue(const uint32_t &x, const uint32_t &y) const
 {
     if(y >= m_height || x >= m_length){
         MESSAGE("INVALID ROW/COLUMN INPUT");
@@ -89,7 +89,7 @@ const uint8_t GameMap::getValue(const uint32_t &x, const uint32_t &y) const
     }
 }
 
-void GameMap::setValue(const uint32_t &x, const uint32_t &y, const uint8_t &value)
+void GameMap::setValue(const uint32_t &x, const uint32_t &y, const uint16_t &value)
 {
     if(y >= m_height || x >= m_length){
         MESSAGE("INVALID ROW/COLUMN INPUT");
@@ -103,14 +103,14 @@ void GameMap::addChunk(const map_data &data)
 {
     //to be sure it's a full sized packet
     if((data.packet_number + 1) * MAP_PACKET_SIZE < getSize()){
-        for( uint32_t i = 0; i < MAP_PACKET_SIZE; ++i )
+        for( int i = 0; i < MAP_PACKET_SIZE; ++i )
         {
             m_data[ MAP_PACKET_SIZE * data.packet_number + i] = data.data_group[ i ];
         }
     }
     else{
 
-        for(uint32_t i = 0; i < (getSize() - data.packet_number * MAP_PACKET_SIZE); i++){
+        for( int i = 0; i < (getSize() - data.packet_number * MAP_PACKET_SIZE); i++){
             m_data[data.packet_number * MAP_PACKET_SIZE + i] = data.data_group[i];
         }
     }
@@ -118,7 +118,7 @@ void GameMap::addChunk(const map_data &data)
 
 void GameMap::populateChunk(map_data &data){
     //to be sure it's a full sized packet
-    if((data.packet_number + 1) * MAP_PACKET_SIZE < getSize()){
+    if( (data.packet_number + 1) * MAP_PACKET_SIZE < getSize() ){
         for(uint32_t i = 0; i < MAP_PACKET_SIZE; i++){
             data.data_group[i] = m_data[data.packet_number * MAP_PACKET_SIZE + i];
         }

@@ -20,9 +20,9 @@ public:
     void generate();
     //void generate(uint32_t seed);
 
-    const uint8_t getValue( const uint32_t &x, const uint32_t &y ) const;
+    const uint16_t getValue( const uint32_t &x, const uint32_t &y ) const;
 
-    inline void setValue( const uint32_t &x, const uint32_t &y, const uint8_t &value );
+    inline void setValue(const uint32_t &x, const uint32_t &y, const uint16_t &value );
 
     void addChunk( const map_data &data );
 
@@ -39,7 +39,7 @@ public:
 private:
     uint32_t    m_height;
     uint32_t    m_length;
-    uint8_t     *m_data;
+    uint16_t   *m_data;
     uint8_t     id;
     bool        generated;
 };

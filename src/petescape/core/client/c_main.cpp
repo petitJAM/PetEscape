@@ -33,15 +33,15 @@ ALLEGRO_TIMER                *timer;
 boost::asio::io_service       client_io_service;
 boost::asio::ip::tcp::socket *socket;
 
-network_packet                input;
-std::map<uint32_t, GameObject *>   objs;
-std::map<uint32_t, PlayerObject *> players;
+network_packet                      input;
+std::map<uint32_t, GameObject *>    objs;
+std::map<uint32_t, PlayerObject *>  players;
 
 uint8_t                       client_id;
 
 uint8_t                       map_length;
 uint8_t                       map_height;
-GameMap                       *map;
+GameMap                      *map;
 
 int                           num_map_packets_recieved;
 }

@@ -42,7 +42,7 @@ typedef struct MAP_HEADER
 typedef struct MAP_DATA
 {
     uint8_t     packet_number;
-    uint8_t     data_group[MAP_PACKET_SIZE];
+    uint16_t     data_group[MAP_PACKET_SIZE];
 } map_data;
 
 typedef struct UPDATE_OBJ
