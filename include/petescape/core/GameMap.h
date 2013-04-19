@@ -20,13 +20,11 @@ public:
     void generate();
     //void generate(uint32_t seed);
 
-    const uint8_t getValue( const uint32_t &row, const uint32_t &column ) const;
+    const uint8_t getValue( const uint32_t &x, const uint32_t &y ) const;
 
-    inline void setValue( const uint32_t &row, const uint32_t &column, const uint8_t &value );
+    inline void setValue( const uint32_t &x, const uint32_t &y, const uint8_t &value );
 
     void addChunk( const map_data &data );
-
-    void display ();
 
     void populateChunk(map_data &data);
 
@@ -34,10 +32,15 @@ public:
     inline const uint8_t getLength();
     inline const size_t getSize();
 
+    inline const uint8_t getId();
+
+    void display();
+
 private:
     uint32_t    m_height;
     uint32_t    m_length;
     uint8_t     *m_data;
+    uint8_t     id;
     bool        generated;
 };
 

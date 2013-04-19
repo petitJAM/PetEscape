@@ -214,11 +214,6 @@ public:
         break;
         case S_MAP_DATA:
         {
-            //convert packets into 2-D Array
-            /*int data_number = packet->data.s_map_data.packet_number * MAP_PACKET_SIZE;
-            for(int i = 0; i < MAP_PACKET_SIZE; i++){
-                map[data_number + i] = packet->data.s_map_data.data_group[i];
-            }*/
             map->addChunk(packet->data.s_map_data);
 
             MESSAGE("recieved S_MAP_DATA " << ((int)packet->data.s_map_data.packet_number));
@@ -226,17 +221,10 @@ public:
 
             // all packets received
             if(num_map_packets_recieved >= ((map_length * map_height) / MAP_PACKET_SIZE)){
+                map->display();
+
                 NetOps.async_write(new_packet, C_BUILD_OBJECTS);
                 MESSAGE( "sending C_BUILD_OBJECTS");
-
-                /*
-                for (uint32_t i = 0; i < MAP_HEIGHT; i++)
-                {
-                    for (uint32_t j = 0; j < MAP_LENGTH; j++)
-                        printf("%d", map.getValue(j, i);
-                    printf("\n");
-                }
-                */
             }
         }
         break;

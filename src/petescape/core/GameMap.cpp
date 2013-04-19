@@ -45,24 +45,14 @@ void GameMap::generate(){
         return;
     }
 
-//    for(uint32_t i = 0; i < getSize(); i++){
-//        if(i % m_length == m_length - 1)
-//            m_data[i] = 1;
-//        else
-//            m_data[i] = 0;
-//    }
-
-    for (uint32_t i = 0; i < getLength(); i++)
-    {
-        for (uint32_t j = 0; i < getHeight(); j++)
-        {
-            setValue(j, i, 0);
+    for(uint32_t i = 0; i < getLength(); i++){
+        for(uint32_t j = 0; j < getHeight(); j++){
+            setValue(i, j, 0);
         }
     }
 
-    for (uint32_t i = 0; i < getLength(); i++)
-    {
-        setValue(getHeight() - 1, i, 1);
+    for(uint32_t i = 0; i < getLength(); i++){
+        setValue(i, getHeight() - 1, 1);
     }
 
     // seed rand
@@ -70,54 +60,42 @@ void GameMap::generate(){
     // srand(123456);
 
     // populate with random platforms
-//    int n_plats = rand() % 50, plat_len, plat_x, plat_y;
+    int n_plats = rand() % 50, plat_len, plat_x, plat_y;
 
-//    if (m_col_count > 10)
-//    {
-//        for (int i = 0; i<n_plats; i++)
-//        {
-//            plat_len = rand() % 5;
-//            plat_x = (rand() % (m_col_count - 10)) + 5; // how far over
-//            plat_y = (rand() % (m_row_count - 10)) + 2; // how far up
-
-//            for (int j = 0; j<plat_len; j++)
-//            {
-//                // TODO update this too...
-//                m_data[plat_y + ((plat_x + j - 1) * m_row_count)] = 1;
-//            }
-//        }
-//    }
-}
-
-void GameMap::display()
-{
-    MESSAGE( "I am printing wrong" );
-    for (uint32_t i = 0; i < m_height; i++)
+    if (m_length > 10)
     {
-        for (uint32_t j = 0; j < m_length; j++)
-            printf("%d", (int)getValue(i, j));
-        printf("\n");
+        for (int i = 0; i<n_plats; i++)
+        {
+            plat_len = rand() % 5;
+            plat_x = (rand() % (m_length - 10)) + 5; // how far over
+            plat_y = (rand() % (m_height - 5)) + 1; // how far up
+
+            for (int j = 0; j<plat_len; j++)
+            {
+                setValue(plat_x + j, plat_y, 1);
+            }
+        }
     }
 }
 
-const uint8_t GameMap::getValue(const uint32_t &row, const uint32_t &column) const
+const uint8_t GameMap::getValue(const uint32_t &x, const uint32_t &y) const
 {
-    if(row >= m_height || column >= m_length){
-        //MESSAGE("INVALID ROW/COLUMN INPUT");
+    if(y >= m_height || x >= m_length){
+        MESSAGE("INVALID ROW/COLUMN INPUT");
         return -1;
     }
     else{
-        return m_data[ column * m_height + row ];
+        return m_data[ x * m_height + y ];
     }
 }
 
-void GameMap::setValue(const uint32_t &row, const uint32_t &column, const uint8_t &value)
+void GameMap::setValue(const uint32_t &x, const uint32_t &y, const uint8_t &value)
 {
-    if(row >= m_height || column >= m_length){
-        //MESSAGE("INVALID ROW/COLUMN INPUT");
+    if(y >= m_height || x >= m_length){
+        MESSAGE("INVALID ROW/COLUMN INPUT");
     }
     else{
-        m_data[ column * m_height + row ] = value;
+        m_data[ x * m_height + y ] = value;
     }
 }
 
@@ -162,6 +140,15 @@ const uint8_t GameMap::getLength(){
 
 const size_t GameMap::getSize(){
     return m_height*m_length/**sizeof(uint8_t)*/;
+}
+
+void GameMap::display(){
+    for(uint32_t i = 0; i < getHeight(); i++){
+        for(uint32_t j = 0; j < getLength(); j++){
+            printf("%d", (int)getValue(j, i));
+        }
+        printf("\n");
+    }
 }
 
 }}
