@@ -31,6 +31,8 @@ public:
     inline const uint8_t getLength();
     inline const size_t getSize();
 
+    void display();
+
 private:
     uint32_t    m_height;
     uint32_t    m_length;

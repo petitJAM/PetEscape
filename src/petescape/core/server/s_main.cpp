@@ -80,36 +80,10 @@ void transfer_map(GameMap *map)
 
             map->populateChunk(new_packet.s_map_data);
 
-            MESSAGE((int)new_packet.s_map_data.packet_number);
-            MESSAGE((int)new_packet.s_map_data.data_group[0] << " bap " << (int)new_packet.s_map_data.data_group[MAP_PACKET_SIZE - 1]);
             async_write(new_packet, S_MAP_DATA);
             MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
             packet_number++;
         }
-        /*
-        while(packet_number < (map.getSize() / MAP_PACKET_SIZE)){
-            packet_list new_packet;
-            new_packet.s_map_data.packet_number = packet_number;
-
-            map.populateChunk(new_packet.s_map_data);
-
-            async_write(new_packet, S_MAP_DATA);
-            MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
-            packet_number++;
-        }
-
-        //Might need to do one more smaller packet
-        if(packet_number * MAP_PACKET_SIZE < map.getSize()){
-            packet_list new_packet;
-            new_packet.s_map_data.packet_number = packet_number;
-            unsigned int current_packet = 0;
-            while(packet_number * MAP_PACKET_SIZE + current_packet < size){
-                new_packet.s_map_data.data_group[current_packet] = data[packet_number * MAP_PACKET_SIZE + current_packet];
-            }
-            async_write(new_packet, S_MAP_DATA);
-            MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
-        }
-        */
     }
     else
     {
@@ -221,12 +195,7 @@ public:
             // Init Map Data
             map->generate();
 
-            // just to look at the map - broken at the moment.
-//            for (uint32_t i = 0; i < MAP_HEIGHT; i++)
-//            {
-//                for (uint32_t j = 0; j < MAP_LENGTH; j++)
-//                    MESSAGE(map->getValue(j, i) << " ");
-//            }
+            map->display();
 
             NetworkOps.transfer_map(map);
 
