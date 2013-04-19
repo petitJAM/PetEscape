@@ -47,6 +47,10 @@ How to install/build boost 1.53
 		./booststrap.sh --prefix=OUTPUT_DIRECTORY
 		./b2 install 
 	where OUTPUT_DIRECTORY is the path to the output directory (your choice)
+	
+Using Git
+---------
+http://stackoverflow.com/questions/1628563/move-recent-commit-to-a-new-branch
 
 Setting up INCLUDEPATH and LIBS
 ---------
