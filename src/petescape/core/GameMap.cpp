@@ -107,7 +107,7 @@ const uint8_t GameMap::getValue(const uint32_t &row, const uint32_t &column) con
         return -1;
     }
     else{
-        return m_data[ column + row * m_height ];
+        return m_data[ column * m_height + row ];
     }
 }
 
@@ -117,7 +117,7 @@ void GameMap::setValue(const uint32_t &row, const uint32_t &column, const uint8_
         //MESSAGE("INVALID ROW/COLUMN INPUT");
     }
     else{
-        m_data[ column + row * m_height ] = value;
+        m_data[ column * m_height + row ] = value;
     }
 }
 
