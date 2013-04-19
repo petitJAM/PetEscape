@@ -217,7 +217,7 @@ public:
         case C_REQUEST_MAP: {
             //Begin sending the client a stream of map information.
             map = new GameMap(map_height, map_length);
-            MESSAGE(map->getSize());
+
             // Init Map Data
             map->generate();
 

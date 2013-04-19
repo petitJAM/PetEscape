@@ -45,12 +45,26 @@ void GameMap::generate(){
         return;
     }
 
-    for(uint32_t i = 0; i < getSize(); i++){
-        if(i % m_length == m_length - 1)
-            m_data[i] = 1;
-        else
-            m_data[i] = 0;
+//    for(uint32_t i = 0; i < getSize(); i++){
+//        if(i % m_length == m_length - 1)
+//            m_data[i] = 1;
+//        else
+//            m_data[i] = 0;
+//    }
+
+    for (uint32_t i = 0; i < getLength(); i++)
+    {
+        for (uint32_t j = 0; i < getHeight(); j++)
+        {
+            setValue(j, i, 0);
+        }
     }
+
+    for (uint32_t i = 0; i < getLength(); i++)
+    {
+        setValue(getHeight() - 1, i, 1);
+    }
+
     // seed rand
     // srand(123456);
     // srand(123456);
@@ -77,10 +91,11 @@ void GameMap::generate(){
 
 void GameMap::display()
 {
+    MESSAGE( "I am printing wrong" );
     for (uint32_t i = 0; i < m_height; i++)
     {
         for (uint32_t j = 0; j < m_length; j++)
-            printf("%d", m_data[i + j*m_height]);
+            printf("%d", (int)getValue(i, j));
         printf("\n");
     }
 }
@@ -92,7 +107,7 @@ const uint8_t GameMap::getValue(const uint32_t &row, const uint32_t &column) con
         return -1;
     }
     else{
-        return m_data[ column * m_length + row ];
+        return m_data[ column + row * m_height ];
     }
 }
 
@@ -102,7 +117,7 @@ void GameMap::setValue(const uint32_t &row, const uint32_t &column, const uint8_
         //MESSAGE("INVALID ROW/COLUMN INPUT");
     }
     else{
-        m_data[ column * m_length + row ] = value;
+        m_data[ column + row * m_height ] = value;
     }
 }
 
@@ -126,9 +141,7 @@ void GameMap::addChunk(const map_data &data)
 void GameMap::populateChunk(map_data &data){
     //to be sure it's a full sized packet
     if((data.packet_number + 1) * MAP_PACKET_SIZE < getSize()){
-        MESSAGE("ENTERING ME");
         for(uint32_t i = 0; i < MAP_PACKET_SIZE; i++){
-            MESSAGE((int)(m_data[data.packet_number * MAP_PACKET_SIZE + i]));
             data.data_group[i] = m_data[data.packet_number * MAP_PACKET_SIZE + i];
         }
     }
