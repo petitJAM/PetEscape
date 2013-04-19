@@ -26,7 +26,7 @@ public:
 
     void addChunk( const map_data &data );
 
-    void populateChunk(map_data &data);
+    void populateChunk( map_data &data );
 
     inline const uint8_t getHeight();
     inline const uint8_t getLength();
