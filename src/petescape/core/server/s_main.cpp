@@ -28,10 +28,10 @@ boost::asio::ip::tcp::socket *socket;
 
 network_packet                input;
 
-GameMap                       *map;
-
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
+
+GameMap                      *map;
 
 uint8_t                       map_length;
 uint8_t                       map_height;
@@ -191,14 +191,14 @@ public:
         case C_REQUEST_MAP: {
             //Begin sending the client a stream of map information.
             map = new GameMap(map_height, map_length);
-            MESSAGE(map->getSize());
+
             // Init Map Data
             map->generate();
 
+            // take a peek
             map->display();
 
             NetworkOps.transfer_map(map);
-
             MESSAGE( "recieved C_REQUEST_MAP" );
         } break;
 
