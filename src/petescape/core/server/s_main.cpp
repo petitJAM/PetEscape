@@ -3,12 +3,12 @@
 #include "petescape/core/core_defs.h"
 #include "petescape/networking/common/net_struct.h"
 #include "petescape/core/GameMap.h"
-//#include "petescape/networking/server/ServerConnection.h"
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp>
+#include <map>
 #include <iterator>
 #include <allegro5/allegro.h>
 
@@ -21,131 +21,154 @@ namespace server {
 #define NETWORK_CLOSE   555
 
 namespace {
-ALLEGRO_EVENT_QUEUE          *server_queue;
-ALLEGRO_EVENT_SOURCE          network_event_source;
-boost::asio::io_service       server_io_service;
-boost::asio::ip::tcp::socket *socket;
+ALLEGRO_EVENT_QUEUE     *server_queue;
+ALLEGRO_EVENT_SOURCE     network_event_source;
+boost::asio::io_service  server_io_service;
 
-network_packet                input;
+boost::asio::ip::tcp::acceptor *tcp_acceptor;
+boost::asio::ip::tcp::socket   *waiting_socket;
+boost::asio::ip::tcp::socket   *sockets[ MAX_CONNECTIONS ];
+uint8_t                         connection_count;
+
+network_packet  waiting_packets[ MAX_CONNECTIONS ];
+bool            expecting_error_on_client[ MAX_CONNECTIONS ];
+
+GameMap *map;
+uint8_t  map_length;
+uint8_t  map_height;
 
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
-
-GameMap                      *map;
-
-uint8_t                       map_length;
-uint8_t                       map_height;
 }
 
 class NetworkOps_
 {
 public:
 
-void async_write( packet_list list, packet_id id )
-{
-    if( socket->is_open() )
-    {
-        network_packet packet;
-        packet.data = list;
-        packet.head.opcode = id;
-        packet.head.response_required = 0;
-        packet.head.sender_id = 0;
 
-        boost::asio::async_write( *socket,
-                                  boost::asio::buffer( &packet, sizeof( packet ) ),
-                                  boost::bind( &NetworkOps_::async_write_callback,
-                                               this,
-                                               boost::asio::placeholders::error,
-                                               boost::asio::placeholders::bytes_transferred ) );
-    }
-    else
+    void async_write( uint8_t client_id, packet_list &list, packet_id id )
     {
-        MESSAGE( "Error: socket unavailable to write to." );
-    }
-}
-
-void transfer_map(GameMap *map)
-{
-    if( socket->is_open() )
-    {
-        MESSAGE( "writing packet." );
-        MESSAGE( map->getSize() );
-        unsigned int packet_number = 0;
-
-        for( int i = 0; i < map->getSize(); i+=MAP_PACKET_SIZE )
+        if( sockets[ client_id ]->is_open() )
         {
-//        while(packet_number * MAP_PACKET_SIZE < map->getSize()){
-            packet_list new_packet;
-            new_packet.s_map_data.packet_number = i/MAP_PACKET_SIZE;
+            network_packet packet;
+            packet.data = list;
+            packet.head.opcode = id;
+            packet.head.response_required = 0;
+            packet.head.sender_id = 0;
 
-            map->populateChunk(new_packet.s_map_data);
-
-            async_write(new_packet, S_MAP_DATA);
-            MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
-            packet_number++;
+            boost::asio::async_write( *( sockets[ client_id ] ),
+                                      boost::asio::buffer( &packet, sizeof( packet ) ),
+                                      boost::bind( &NetworkOps_::async_write_callback,
+                                                   this,
+                                                   client_id,
+                                                   boost::asio::placeholders::error,
+                                                   boost::asio::placeholders::bytes_transferred ) );
+        }
+        else
+        {
+            MESSAGE( "Error: socket unavailable to write to." );
         }
     }
-    else
+
+    void transfer_map( uint8_t client_id, GameMap *map )
     {
-        MESSAGE( "Error: socket unavailable to write to." );
-    }
-}
+        if( sockets[ client_id ]->is_open() )
+        {
+            MESSAGE( "writing packet." );
+            MESSAGE( map->getSize() );
+            unsigned int packet_number = 0;
 
-void async_write_callback( const boost::system::error_code &error, size_t /*transfered*/ )
-{
-    if( error )
-    {
-        MESSAGE( "Error on write: " << error.message() );
-    }
-}
+            for( int i = 0; i < map->getSize(); i+=MAP_PACKET_SIZE )
+            {
+    //        while(packet_number * MAP_PACKET_SIZE < map->getSize()){
+                packet_list new_packet;
+                new_packet.s_map_data.packet_number = i/MAP_PACKET_SIZE;
 
-void async_read()
-{
-    if( socket->is_open() )
-    {
-        boost::asio::async_read( *socket,
-                                 boost::asio::buffer( &input, sizeof( input ) ),
-                                 boost::bind( &NetworkOps_::async_read_callback,
-                                              this,
-                                              boost::asio::placeholders::error,
-                                              boost::asio::placeholders::bytes_transferred ) );
-    }
-    else
-    {
-        MESSAGE( "Error: socket unavailable to read from." );
-    }
-}
+                map->populateChunk(new_packet.s_map_data);
 
-void async_read_callback( const boost::system::error_code &error, size_t /*transfered*/ )
-{
-    static ALLEGRO_MUTEX *input_mutex = al_create_mutex();
-
-    al_lock_mutex( input_mutex );
-    ALLEGRO_EVENT event;
-
-    if( error )
-    {
-        event.type = NETWORK_CLOSE;
-        MESSAGE( "Error on read: " << error.message() );
-    }
-    else
-    {
-        network_packet *packet;
-
-        packet = new network_packet;
-        packet->data = input.data;
-        packet->head = input.head;
-
-        event.type = NETWORK_RECV;
-        event.user.data1 = (intptr_t)packet;
+                async_write(client_id, new_packet, S_MAP_DATA);
+                MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
+                packet_number++;
+            }
+        }
+        else
+        {
+            MESSAGE( "Error: socket unavailable to write to." );
+        }
     }
 
-    al_emit_user_event( &network_event_source, &event, nullptr );
+    void async_write_callback( uint8_t client_id, const boost::system::error_code &error, size_t /*transfered*/ )
+    {
+        if( error )
+        {
+            MESSAGE( "Error on write to client" << (uint32_t)client_id << "\n\t" << error.message() );
+        }
+    }
 
-    al_unlock_mutex( input_mutex );
+    void async_read( uint8_t client_id )
+    {
+        if( sockets[ client_id ]->is_open() )
+        {
+            boost::asio::async_read( *( sockets[ client_id ] ),
+                                     boost::asio::buffer( &( waiting_packets[ client_id ] ),
+                                                          sizeof( waiting_packets[ client_id ] ) ),
+                                     boost::bind( &NetworkOps_::async_read_callback,
+                                                  this,
+                                                  client_id,
+                                                  boost::asio::placeholders::error,
+                                                  boost::asio::placeholders::bytes_transferred ) );
+        }
+        else
+        {
+            MESSAGE( "Error: socket unavailable to read from." );
+        }
+    }
 
-    async_read();
-}
+    void async_read_callback( uint8_t client_id, const boost::system::error_code &error, size_t /*transfered*/ )
+    {
+        // TODO: This is hella ghetto. Needs not to be.
+        static ALLEGRO_MUTEX* input_mutex[ MAX_CONNECTIONS ] =
+        { al_create_mutex(), al_create_mutex(), al_create_mutex(), al_create_mutex() };
+
+        al_lock_mutex( input_mutex[ client_id ] );
+        ALLEGRO_EVENT event;
+
+        if( error && !expecting_error_on_client[ client_id ] )
+        {
+            MESSAGE( "Error on read: " << error.message() << "\n\tAttempting a graceful socket close." );
+
+            event.type = NETWORK_CLOSE;
+            event.user.data1 = client_id;
+            al_unlock_mutex( input_mutex[ client_id ] );
+            al_emit_user_event( &network_event_source, &event, nullptr );
+            return;
+        }
+        if( expecting_error_on_client[ client_id ] )
+        {
+            MESSAGE( "Ending read sequence for client " << (uint32_t)client_id << " greacefuly." );
+
+            expecting_error_on_client[ client_id ] = false;
+            al_unlock_mutex( input_mutex[ client_id ] );
+            return;
+        }
+        else
+        {
+            network_packet *packet;
+
+            packet = new network_packet;
+            packet->data = waiting_packets[ client_id ].data;
+            packet->head = waiting_packets[ client_id ].head;
+
+            event.type = NETWORK_RECV;
+            event.user.data1 = (intptr_t)packet;
+        }
+
+        al_emit_user_event( &network_event_source, &event, nullptr );
+
+        al_unlock_mutex( input_mutex[ client_id ] );
+
+        async_read( client_id );
+    }
 
 };
 
@@ -173,9 +196,35 @@ public:
             new_packet.s_info.client_id = player->getID();
 
             // Tell the client its ID
-            NetworkOps.async_write( new_packet, S_INFO );
+            NetworkOps.async_write( player->getID(), new_packet, S_INFO );
             MESSAGE( "recieved C_HELLO, write with S_INFO" );
+
+            // Tell the other connections about the new player.
+            for( int i = 0; i < MAX_CONNECTIONS; ++i )
+            {
+                if( ( i != player->getID() ) && ( sockets[ i ] != nullptr ) )
+                {
+                    packet_list new_packet;
+                    new_packet.o_introduce.id   = player->getID();
+                    new_packet.o_introduce.type = (uint16_t)PlayerType;
+                    new_packet.o_introduce.x    = (uint32_t)player->getX();
+                    new_packet.o_introduce.y    = (uint32_t)player->getY();
+
+                    NetworkOps.async_write( i, new_packet, O_INTRODUCE );
+                }
+            }
         }break;
+
+        case C_CLOSE: {
+            MESSAGE( "Client " << (uint32_t)packet->head.sender_id << " is closing." );
+            ALLEGRO_EVENT event;
+
+            expecting_error_on_client[ packet->head.sender_id ] = true;
+
+            event.type = NETWORK_CLOSE;
+            event.user.data1 = packet->head.sender_id;
+            al_emit_user_event( &network_event_source, &event, nullptr );
+        } break;
 
         case C_READY: {
             // Send the client anything that it needs. In this case, a map header.
@@ -184,21 +233,24 @@ public:
             new_packet.s_map_header.stage_length = map_length;
             new_packet.s_map_header.stage_height = map_height;
 
-            NetworkOps.async_write(new_packet, S_MAP_HEADER);
+            NetworkOps.async_write( packet->head.sender_id, new_packet, S_MAP_HEADER);
             MESSAGE( "recieved C_READY, write with S_MAP_HEADER" );
         } break;
 
         case C_REQUEST_MAP: {
             //Begin sending the client a stream of map information.
-            map = new GameMap(map_height, map_length);
+            if( map == nullptr )
+            {
+                map = new GameMap(map_height, map_length);
 
-            // Init Map Data
-            map->generate();
+                // Init Map Data
+                map->generate();
 
-            // take a peek
-            map->display();
+                // take a peek
+                map->display();
+            }
 
-            NetworkOps.transfer_map(map);
+            NetworkOps.transfer_map( packet->head.sender_id, map );
             MESSAGE( "recieved C_REQUEST_MAP" );
         } break;
 
@@ -212,7 +264,7 @@ public:
                 new_packet.o_introduce.x    = (uint32_t)((PlayerObject*)(i.second))->getX();
                 new_packet.o_introduce.y    = (uint32_t)((PlayerObject*)(i.second))->getY();
 
-                NetworkOps.async_write( new_packet, O_INTRODUCE );
+                NetworkOps.async_write( packet->head.sender_id, new_packet, O_INTRODUCE );
                 ++count;
             }
 
@@ -223,7 +275,7 @@ public:
                 new_packet.o_introduce.x    = (uint32_t)((GameObject*)(i.second))->getX();
                 new_packet.o_introduce.y    = (uint32_t)((GameObject*)(i.second))->getY();
 
-                NetworkOps.async_write( new_packet, O_INTRODUCE );
+                NetworkOps.async_write( packet->head.sender_id, new_packet, O_INTRODUCE );
                 ++count;
             }
             MESSAGE( "Wrote " << count << " objects." );
@@ -308,24 +360,48 @@ static void accept_handler( const boost::system::error_code &error )
         event.type = NETWORK_CONNECT;
         al_emit_user_event( &network_event_source, &event, nullptr );
 
-        NetworkOps.async_read();
+        sockets[ connection_count ] = waiting_socket;
+
+        NetworkOps.async_read( connection_count );
+        ++connection_count;
+
+        if( connection_count != MAX_CONNECTIONS )
+        {
+            waiting_socket = new boost::asio::ip::tcp::socket( server_io_service );
+
+            tcp_acceptor->async_accept( *waiting_socket,
+                                        boost::bind( &accept_handler,
+                                                     boost::asio::placeholders::error ) );
+        }
+
     }
 }
 
 int s_main( int /*argc*/, char ** /*argv*/ )
 {
-    boost::asio::ip::tcp::acceptor tcp_acceptor( server_io_service,
-                                                 boost::asio::ip::tcp::endpoint(
-                                                     boost::asio::ip::tcp::v4(),
-                                                     2001 ) );
+    tcp_acceptor = new boost::asio::ip::tcp::acceptor( server_io_service,
+                                                       boost::asio::ip::tcp::endpoint(
+                                                           boost::asio::ip::tcp::v4(),
+                                                           2001 ) );
 
     boost::asio::io_service::work work( server_io_service );
     boost::thread io_thread( boost::bind( &boost::asio::io_service::run, &server_io_service ) );
+    uint64_t loop_counter = 0;
+    ALLEGRO_EVENT event;
 
     server_queue  = nullptr;
+    map = nullptr;
+    connection_count = 0;
+
+    for( int i = 0;
+         i < MAX_CONNECTIONS;
+         expecting_error_on_client[ i ] = false,
+         sockets[ i ] = nullptr,
+         ++i );
 
     try
     {
+        ALLEGRO_TIMER *logic_timer;
         bool should_exit = false;
 
         if( !al_init() )
@@ -340,34 +416,50 @@ int s_main( int /*argc*/, char ** /*argv*/ )
             return -2;
         }
 
+        if( !( logic_timer = al_create_timer( 1.0 / 30.0 ) ) )
+        {
+            MESSAGE( "Unable to create Allegro Timer." );
+            return -3;
+        }
+
         al_init_user_event_source( &network_event_source );
         al_register_event_source( server_queue, &network_event_source );
+        al_register_event_source( server_queue, al_get_timer_event_source( logic_timer ) );
 
-        socket = new boost::asio::ip::tcp::socket( server_io_service );
+        waiting_socket = new boost::asio::ip::tcp::socket( server_io_service );
 
         // Setup async_accept.
-        tcp_acceptor.async_accept( *socket,
-                                   boost::bind( &accept_handler,
-                                                boost::asio::placeholders::error ) );
+        tcp_acceptor->async_accept( *waiting_socket,
+                                    boost::bind( &accept_handler,
+                                                 boost::asio::placeholders::error ) );
+
+        al_start_timer( logic_timer );
 
         // allegro event queue
         while( !should_exit )
         {
-            ALLEGRO_EVENT event;
-//            uint32_t tmp;
             al_wait_for_event( server_queue, &event );
 
             switch( event.type )
             {
+
+            case ALLEGRO_EVENT_TIMER: {
+                static uint8_t update_id = 0;
+                // update objects;
+
+                // Calculate player to update:
+                // id = loop_counter % MAX_CONNECTIONS
+                update_id = loop_counter % MAX_CONNECTIONS;
+                if( sockets[ update_id ] )
+                {
+                    // push obj info to client with ID = update_id
+                }
+                ++loop_counter;
+
+            } break;
+
             case NETWORK_CONNECT:
                 MESSAGE( "recieving event NETWORK_CONNECT" );
-                // If we need to do anything when the Client connects, it goes here.
-                // For testing, we create a GameObject, and move it to 100,100.
-//                tmp = ServerOps.genObject();
-//                objs[ tmp ]->setX( 100 );
-//                objs[ tmp ]->setY( 100 );
-
-
             break;
 
             case NETWORK_RECV:
@@ -380,16 +472,26 @@ int s_main( int /*argc*/, char ** /*argv*/ )
                 delete (network_packet *)event.user.data1;
             break;
 
-            case NETWORK_CLOSE:
+            case NETWORK_CLOSE: {
                 MESSAGE( "recieving event NETWORK_CLOSE" );
+
                 should_exit = true;
-            break;
+
+                sockets[ event.user.data1 ]->close();
+                delete sockets[ event.user.data1 ];
+                sockets[ event.user.data1 ] = nullptr;
+
+                for( int i = 0; i < MAX_CONNECTIONS; ++i )
+                {
+                    if( sockets[ i ] != nullptr )
+                        should_exit = false;
+                }
+
+            } break;
 
             default:
                 MESSAGE( "Ignored Event." );
             }
-
-            // TODO timer
         }
 
         server_io_service.stop();

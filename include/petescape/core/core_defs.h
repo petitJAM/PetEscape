@@ -4,6 +4,8 @@
 #define MAP_LENGTH 100
 #define MAP_HEIGHT 40
 
+#define MAX_CONNECTIONS 4
+
 #include <iostream>
 
 #ifdef DEBUG
