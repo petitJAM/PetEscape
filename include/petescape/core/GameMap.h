@@ -39,11 +39,7 @@ public:
 private:
     uint32_t    m_height;
     uint32_t    m_length;
-<<<<<<< HEAD
     uint16_t   *m_data;
-=======
-    uint16_t     *m_data;
->>>>>>> 6f42180d9195c1d11e632b60f9b74ed9965e4b67
     uint8_t     id;
     bool        generated;
 };
