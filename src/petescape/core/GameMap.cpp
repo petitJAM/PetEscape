@@ -8,7 +8,7 @@ GameMap::GameMap(const uint32_t &height, const uint32_t &length) :
     m_height( height ),
     m_length( length )
 {
-    m_data = (uint8_t*)malloc( sizeof( uint8_t ) * m_height * m_length );
+    m_data = (uint16_t*)malloc( sizeof( uint16_t ) * m_height * m_length );
 }
 
 //frees the array inside the object - may not be necessary
@@ -27,14 +27,6 @@ void GameMap::generate(){
     for(uint32_t i = 0; i < getLength(); i++){
         setValue(getHeight() - 1, i, 1);
     }
-    /*
-    for(uint32_t i = 0; i < getSize(); i++){
-        if(i % m_height == m_height - 1)
-            m_data[i] = 1;
-        else
-            m_data[i] = 0;
-    }
-    */
 }
 
 const uint8_t GameMap::getValue(const uint32_t &row, const uint32_t &column) const
@@ -48,7 +40,7 @@ const uint8_t GameMap::getValue(const uint32_t &row, const uint32_t &column) con
     }
 }
 
-void GameMap::setValue(const uint32_t &row, const uint32_t &column, const uint8_t &value)
+void GameMap::setValue(const uint32_t &row, const uint32_t &column, const uint16_t &value)
 {
     if(row >= m_height || column >= m_length){
         MESSAGE("INVALID ROW/COLUMN INPUT");

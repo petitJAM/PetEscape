@@ -21,7 +21,7 @@ public:
 
     const uint8_t getValue( const uint32_t &row, const uint32_t &column ) const;
 
-    inline void setValue( const uint32_t &row, const uint32_t &column, const uint8_t &value );
+    inline void setValue( const uint32_t &row, const uint32_t &column, const uint16_t &value );
 
     void addChunk( const map_data &data );
 
@@ -36,7 +36,7 @@ public:
 private:
     uint32_t    m_height;
     uint32_t    m_length;
-    uint8_t     *m_data;
+    uint16_t     *m_data;
 };
 
 }}
