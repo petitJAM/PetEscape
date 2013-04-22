@@ -12,6 +12,9 @@ public:
     ~BlockMap();
 
     inline Block getBlock( uint32_t &x, uint32_t &y );
+    inline void setBlock( uint32_t &x, uint32_t &y, Block &b);
+
+    void addBlockAt( uint32_t &x, uint32_t &y, uint16_t &val);
 
 private:
     uint32_t    height;
