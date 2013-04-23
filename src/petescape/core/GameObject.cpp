@@ -48,7 +48,7 @@ PlayerObject* PlayerObject::CreatePlayer()
 {
     static uint32_t n_id = 0;
 
-    return CreatePlayer( n_id );
+    return CreatePlayer( n_id++ );
 }
 
 PlayerObject* PlayerObject::CreatePlayer( uint32_t id )
