@@ -52,9 +52,10 @@ void BlockMap::addBlockAt(const uint32_t &x, const uint32_t &y, const uint16_t &
 
 void BlockMap::display()
 {
-    for(uint32_t i = 0; i < getLength(); i++){
-        for(uint32_t j = 0; j < getHeight(); j++){
-            printf("%d", (int)getBlock(i, j).getBlockType());
+    MESSAGE("BLOCKMAP DISPLAY");
+    for(uint32_t i = 0; i < getHeight(); i++){
+        for(uint32_t j = 0; j < getLength(); j++){
+            printf("%d", (int)getBlock(j, i).getBlockType());
         }
         printf("\n");
     }

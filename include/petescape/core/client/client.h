@@ -4,6 +4,7 @@
 #include "petescape/networking/client/ClientConnection.h"
 #include "petescape/networking/common/net_struct.h"
 #include "petescape/core/GameObject.h"
+#include "petescape/core/BlockMap.h"
 
 #include <map>
 #include <boost/asio.hpp>
