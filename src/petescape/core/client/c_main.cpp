@@ -6,6 +6,7 @@
 #include "petescape/networking/client/ClientConnection.h"
 #include "petescape/networking/common/net_struct.h"
 #include "petescape/core/GameMap.h"
+#include "petescape/core/BlockMap.h"
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
@@ -33,15 +34,16 @@ ALLEGRO_TIMER                *timer;
 boost::asio::io_service       client_io_service;
 boost::asio::ip::tcp::socket *socket;
 
-network_packet                input;
-std::map<uint32_t, GameObject *>   objs;
-std::map<uint32_t, PlayerObject *> players;
+network_packet                      input;
+std::map<uint32_t, GameObject *>    objs;
+std::map<uint32_t, PlayerObject *>  players;
 
 uint8_t                       client_id;
 
 uint8_t                       map_length;
 uint8_t                       map_height;
-GameMap                       *map;
+GameMap                      *map;
+BlockMap                     *block_map;
 
 int                           num_map_packets_recieved;
 }
@@ -221,7 +223,9 @@ public:
 
             // all packets received
             if(num_map_packets_recieved >= ((map_length * map_height) / MAP_PACKET_SIZE)){
-                map->display();
+                //map->display();
+                block_map = new BlockMap(*map);
+                block_map->display();
 
                 NetOps.async_write(new_packet, C_BUILD_OBJECTS);
                 MESSAGE( "sending C_BUILD_OBJECTS");

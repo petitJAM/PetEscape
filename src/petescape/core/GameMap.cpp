@@ -78,7 +78,7 @@ void GameMap::generate(){
     }
 }
 
-const uint8_t GameMap::getValue(const uint32_t &x, const uint32_t &y) const
+const uint16_t GameMap::getValue(const uint32_t &x, const uint32_t &y) const
 {
     if(y >= m_height || x >= m_length){
         MESSAGE("INVALID ROW/COLUMN INPUT");
@@ -103,14 +103,14 @@ void GameMap::addChunk(const map_data &data)
 {
     //to be sure it's a full sized packet
     if((data.packet_number + 1) * MAP_PACKET_SIZE < getSize()){
-        for( uint32_t i = 0; i < MAP_PACKET_SIZE; ++i )
+        for( int i = 0; i < MAP_PACKET_SIZE; ++i )
         {
             m_data[ MAP_PACKET_SIZE * data.packet_number + i] = data.data_group[ i ];
         }
     }
     else{
 
-        for(uint32_t i = 0; i < (getSize() - data.packet_number * MAP_PACKET_SIZE); i++){
+        for( int i = 0; i < (getSize() - data.packet_number * MAP_PACKET_SIZE); i++){
             m_data[data.packet_number * MAP_PACKET_SIZE + i] = data.data_group[i];
         }
     }
@@ -118,7 +118,7 @@ void GameMap::addChunk(const map_data &data)
 
 void GameMap::populateChunk(map_data &data){
     //to be sure it's a full sized packet
-    if((data.packet_number + 1) * MAP_PACKET_SIZE < getSize()){
+    if( (data.packet_number + 1) * MAP_PACKET_SIZE < getSize() ){
         for(uint32_t i = 0; i < MAP_PACKET_SIZE; i++){
             data.data_group[i] = m_data[data.packet_number * MAP_PACKET_SIZE + i];
         }
@@ -143,9 +143,9 @@ const size_t GameMap::getSize(){
 }
 
 void GameMap::display(){
-    for(uint32_t i = 0; i < getHeight(); i++){
-        for(uint32_t j = 0; j < getLength(); j++){
-            printf("%d", (int)getValue(j, i));
+    for(uint32_t i = 0; i < getLength(); i++){
+        for(uint32_t j = 0; j < getHeight(); j++){
+            printf("%d", (int)getValue(i, j));
         }
         printf("\n");
     }
