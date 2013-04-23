@@ -17,7 +17,7 @@ public:
     // will probably not need this
     inline const uint16_t getBlockVal();
 
-    inline const uint8_t getBlockType();
+    const uint8_t getBlockType();
     inline const uint8_t getBlockSubType();
     inline const uint8_t getBlockRotation();
 

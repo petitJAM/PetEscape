@@ -18,19 +18,19 @@ Block::~Block()
     // empty for now
 }
 
-const uint8_t getBlockVal(){
+const uint16_t Block::getBlockVal(){
     return blockVal;
 }
 
-const uint8_t getBlockType(){
+const uint8_t Block::getBlockType(){
     return type;
 }
 
-const uint8_t getBlockSubType(){
+const uint8_t Block::getBlockSubType(){
     return subtype;
 }
 
-const uint8_t getBlockRotation(){
+const uint8_t Block::getBlockRotation(){
     return rotation;
 }
 

@@ -6,6 +6,7 @@
 #include "petescape/networking/client/ClientConnection.h"
 #include "petescape/networking/common/net_struct.h"
 #include "petescape/core/GameMap.h"
+#include "petescape/core/BlockMap.h"
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
@@ -42,6 +43,7 @@ uint8_t                       client_id;
 uint8_t                       map_length;
 uint8_t                       map_height;
 GameMap                      *map;
+BlockMap                     *block_map;
 
 int                           num_map_packets_recieved;
 }
@@ -222,6 +224,7 @@ public:
             // all packets received
             if(num_map_packets_recieved >= ((map_length * map_height) / MAP_PACKET_SIZE)){
                 map->display();
+                block_map = new BlockMap(*map);
 
                 NetOps.async_write(new_packet, C_BUILD_OBJECTS);
                 MESSAGE( "sending C_BUILD_OBJECTS");
