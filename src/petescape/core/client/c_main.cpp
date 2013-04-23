@@ -58,7 +58,7 @@ void async_write( packet_list list, packet_id id )
         packet.data = list;
         packet.head.opcode = id;
         packet.head.response_required = 0;
-        packet.head.sender_id = 0;
+        packet.head.sender_id = client_id;
 
         boost::asio::async_write( *socket,
                                   boost::asio::buffer( &packet, sizeof( packet ) ),
@@ -356,10 +356,15 @@ int c_main( int /*argc*/, char **argv )
             case NETWORK_CLOSE:
                 MESSAGE( "recieving event NETWORK_CLOSE" );
             break;
-            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+
+            case ALLEGRO_EVENT_DISPLAY_CLOSE: {
+                packet_list padding;
+
                 MESSAGE( "recieving event ALLEGRO_EVENT_DISPLAY_CLOSE" );
+                NetOps.async_write( padding, C_CLOSE );
+
                 should_exit = true;
-            break;
+            } break;
             }
 
             if( redraw && al_is_event_queue_empty( client_queue ) )
@@ -373,7 +378,6 @@ int c_main( int /*argc*/, char **argv )
                 {
                     ((GameObject*)(tmp.second))->render();
                 }
-
 
                 BOOST_FOREACH( m_element tmp, players )
                 {

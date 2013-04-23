@@ -32,6 +32,11 @@ typedef struct CLIENT_USER_INPUT
     time_t event_time;
 } user_input;
 
+typedef struct CLIENT_CLOSE
+{
+    char        padding;
+} client_close;
+
 typedef struct SERVER_INFO
 {
     uint32_t    client_id;
@@ -121,6 +126,7 @@ typedef enum PACKET_ID
 {
     DATA_NULL = 0x0000,
     C_HELLO = 0x0001,
+    C_CLOSE,
     C_READY,
     C_REQUEST_MAP,
     C_BUILD_OBJECTS,
@@ -140,6 +146,7 @@ typedef union PACKET_LIST
 {
     client_hello        c_hello;
     user_input          c_user_input;
+    client_close        c_close;
     server_info         s_info;
     map_header          s_map_header;
     map_data            s_map_data;
