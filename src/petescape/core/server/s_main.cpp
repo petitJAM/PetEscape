@@ -39,6 +39,8 @@ uint8_t  map_height;
 
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
+
+time_t pressed_keys[MAX_CONNECTIONS][TOTAL_SUPPORTED_KEYS];
 }
 
 class NetworkOps_
@@ -285,6 +287,7 @@ public:
         case C_USER_INPUT: {
             //time of the event
             time_t event_time = packet->data.c_user_input.event_time;
+            uint8_t client_id = packet->head.sender_id;
 
             switch( packet->data.c_user_input.event.type )
             {
@@ -295,14 +298,19 @@ public:
                 switch( event.keycode )
                 {
                 case ALLEGRO_KEY_W: {
+                    pressed_keys[client_id][KEY_UP_INDEX] = event_time;
                 } break;
                 case ALLEGRO_KEY_A: {
+                    pressed_keys[client_id][KEY_LEFT_INDEX] = event_time;
                 } break;
                 case ALLEGRO_KEY_S: {
+                    pressed_keys[client_id][KEY_DOWN_INDEX] = event_time;
                 } break;
                 case ALLEGRO_KEY_D: {
+                    pressed_keys[client_id][KEY_RIGHT_INDEX] = event_time;
                 } break;
                 case ALLEGRO_KEY_SPACE: {
+                    pressed_keys[client_id][KEY_SPACE_INDEX] = event_time;
                 } break;
                 }
             } break;
@@ -313,14 +321,20 @@ public:
                 switch( event.keycode )
                 {
                 case ALLEGRO_KEY_W: {
+                    time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_UP_INDEX];
                 } break;
                 case ALLEGRO_KEY_A: {
+                    time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_LEFT_INDEX];
+                    //some type of position updating using the time pressed and the player's speed.
                 } break;
                 case ALLEGRO_KEY_S: {
+                    time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_DOWN_INDEX];
                 } break;
                 case ALLEGRO_KEY_D: {
+                    time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_RIGHT_INDEX];
                 } break;
                 case ALLEGRO_KEY_SPACE: {
+                    time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_SPACE_INDEX];
                 } break;
                 }
             } break;
