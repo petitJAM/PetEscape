@@ -41,6 +41,7 @@ std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
 
 time_t pressed_keys[MAX_CONNECTIONS][TOTAL_SUPPORTED_KEYS];
+bool players_ducking[MAX_CONNECTIONS];
 }
 
 class NetworkOps_
@@ -305,6 +306,7 @@ public:
                 } break;
                 case ALLEGRO_KEY_S: {
                     pressed_keys[client_id][KEY_DOWN_INDEX] = event_time;
+                    players_ducking[client_id] = true;
                 } break;
                 case ALLEGRO_KEY_D: {
                     pressed_keys[client_id][KEY_RIGHT_INDEX] = event_time;
@@ -322,19 +324,25 @@ public:
                 {
                 case ALLEGRO_KEY_W: {
                     time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_UP_INDEX];
+                    pressed_keys[client_id][KEY_UP_INDEX] = (time_t) 0;
                 } break;
                 case ALLEGRO_KEY_A: {
                     time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_LEFT_INDEX];
                     //some type of position updating using the time pressed and the player's speed.
+                    pressed_keys[client_id][KEY_LEFT_INDEX] = (time_t) 0;
                 } break;
                 case ALLEGRO_KEY_S: {
-                    time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_DOWN_INDEX];
+                    //time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_DOWN_INDEX];
+                    players_ducking[client_id] = false;
+                    pressed_keys[client_id][KEY_DOWN_INDEX] = (time_t) 0;
                 } break;
                 case ALLEGRO_KEY_D: {
                     time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_RIGHT_INDEX];
+                    pressed_keys[client_id][KEY_RIGHT_INDEX] = (time_t) 0;
                 } break;
                 case ALLEGRO_KEY_SPACE: {
                     time_t time_pressed = packet->data.c_user_input.event_time - pressed_keys[client_id][KEY_SPACE_INDEX];
+                    pressed_keys[client_id][KEY_SPACE_INDEX] = (time_t) 0;
                 } break;
                 }
             } break;
