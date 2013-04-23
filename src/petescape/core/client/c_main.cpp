@@ -223,8 +223,9 @@ public:
 
             // all packets received
             if(num_map_packets_recieved >= ((map_length * map_height) / MAP_PACKET_SIZE)){
-                map->display();
+                //map->display();
                 block_map = new BlockMap(*map);
+                block_map->display();
 
                 NetOps.async_write(new_packet, C_BUILD_OBJECTS);
                 MESSAGE( "sending C_BUILD_OBJECTS");

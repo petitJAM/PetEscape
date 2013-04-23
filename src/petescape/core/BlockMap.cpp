@@ -13,8 +13,8 @@ BlockMap::BlockMap(GameMap &map) :
     blockmap = (Block**) malloc( sizeof( Block* ) * height * length);
 
     // copy values in
-    for (uint32_t i = height; i >= 0; i--)
-        for (uint32_t j = length; j >= 0; j--)
+    for (uint32_t i = 0; i < length; i++)
+        for (uint32_t j = 0; j < height; j++)
             addBlockAt(i, j, map.getValue(i, j));
 }
 
@@ -52,9 +52,9 @@ void BlockMap::addBlockAt(const uint32_t &x, const uint32_t &y, const uint16_t &
 
 void BlockMap::display()
 {
-    for(uint32_t i = 0; i < getHeight(); i++){
-        for(uint32_t j = 0; j < getLength(); j++){
-            printf("%d", (int)getBlock(j, i).getBlockType());
+    for(uint32_t i = 0; i < getLength(); i++){
+        for(uint32_t j = 0; j < getHeight(); j++){
+            printf("%d", (int)getBlock(i, j).getBlockType());
         }
         printf("\n");
     }

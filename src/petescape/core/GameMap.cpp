@@ -143,9 +143,9 @@ const size_t GameMap::getSize(){
 }
 
 void GameMap::display(){
-    for(uint32_t i = 0; i < getHeight(); i++){
-        for(uint32_t j = 0; j < getLength(); j++){
-            printf("%d", (int)getValue(j, i));
+    for(uint32_t i = 0; i < getLength(); i++){
+        for(uint32_t j = 0; j < getHeight(); j++){
+            printf("%d", (int)getValue(i, j));
         }
         printf("\n");
     }
