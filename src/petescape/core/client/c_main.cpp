@@ -1,20 +1,28 @@
 
 #include "petescape/core/client/client.h"
+#include "petescape/core/client/client_resources.h"
 #include "petescape/core/ObjectRenderer.h"
 #include "petescape/core/core_defs.h"
-
-#include "petescape/networking/client/ClientConnection.h"
-#include "petescape/networking/common/net_struct.h"
 #include "petescape/core/GameMap.h"
 #include "petescape/core/BlockMap.h"
+
+#include "petescape/networking/common/net_struct.h"
+
+#include "launcher.h"
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/foreach.hpp>
-#include <allegro5/allegro.h>
-#include <map>
 
+#include <allegro5/allegro.h>
+#include <allegro5/allegro_image.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
+#include <allegro5/allegro_primitives.h>
+
+#include <map>
+#include <cstdlib>
 
 namespace petescape {
 namespace core {
@@ -45,7 +53,11 @@ uint8_t                       map_height;
 GameMap                      *map;
 BlockMap                     *block_map;
 
+GameState                     game_state;
+
 int                           num_map_packets_recieved;
+char server_ip_address[ 20 ];
+bool accepting_ip_address;
 }
 
 class NetworkOps_
@@ -258,11 +270,125 @@ namespace {
 GameOps_   GameOps;
 }
 
+void render_welcome_state()
+{
+    static bool is_setup = false;
+
+    if( is_setup == false )
+    {
+        // Load bitmaps that we need.
+        play_solo_bitmap = al_load_bitmap( "assets/welcome_screen/play_solo.bmp" );
+        host_game_bitmap = al_load_bitmap( "assets/welcome_screen/host_game.bmp" );
+        join_game_bitmap = al_load_bitmap( "assets/welcome_screen/join_game.bmp" );
+        quit_game_bitmap = al_load_bitmap( "assets/welcome_screen/quit_game.bmp" );
+
+        if( !play_solo_bitmap ||
+            !host_game_bitmap ||
+            !join_game_bitmap ||
+            !quit_game_bitmap )
+        {
+            MESSAGE( "Unable to load bitmaps. Exiting." );
+            exit( 2 );
+        }
+
+        play_solo_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( play_solo_bitmap ) / 2;
+        play_solo_bounds.y = al_get_display_height( display ) / 5 * 1 - al_get_bitmap_height( play_solo_bitmap ) / 2;
+        play_solo_bounds.width = al_get_bitmap_width( play_solo_bitmap );
+        play_solo_bounds.height = al_get_bitmap_height( play_solo_bitmap );
+
+        host_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( host_game_bitmap ) / 2;
+        host_game_bounds.y = al_get_display_height( display ) / 5 * 2 - al_get_bitmap_height( host_game_bitmap ) / 2;
+        host_game_bounds.width = al_get_bitmap_width( host_game_bitmap );
+        host_game_bounds.height = al_get_bitmap_height( host_game_bitmap );
+
+        join_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( join_game_bitmap ) / 2;
+        join_game_bounds.y = al_get_display_height( display ) / 5 * 3 - al_get_bitmap_height( join_game_bitmap ) / 2;
+        join_game_bounds.width = al_get_bitmap_width( join_game_bitmap );
+        join_game_bounds.height = al_get_bitmap_height( join_game_bitmap );
+
+        quit_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( quit_game_bitmap ) / 2;
+        quit_game_bounds.y = al_get_display_height( display ) / 5 * 4 - al_get_bitmap_height( quit_game_bitmap ) / 2;
+        quit_game_bounds.width = al_get_bitmap_width( quit_game_bitmap );
+        quit_game_bounds.height = al_get_bitmap_height( quit_game_bitmap );
+
+        is_setup = true;
+    }
+
+    al_draw_bitmap( play_solo_bitmap,
+                    play_solo_bounds.x,
+                    play_solo_bounds.y,
+                    0 );
+
+    al_draw_bitmap( host_game_bitmap,
+                    host_game_bounds.x,
+                    host_game_bounds.y,
+                    0 );
+
+    if( !accepting_ip_address )
+    {
+        al_draw_bitmap( join_game_bitmap,
+                        join_game_bounds.x,
+                        join_game_bounds.y,
+                        0 );
+    }
+    else
+    {
+        al_draw_rectangle( join_game_bounds.x,
+                           join_game_bounds.y,
+                           join_game_bounds.x + join_game_bounds.width,
+                           join_game_bounds.y + join_game_bounds.height,
+                           al_map_rgb( 0, 0, 0 ),
+                           1 );
+
+
+        al_draw_text( default_font,
+                      al_map_rgb( 127, 127, 127 ),
+                      join_game_bounds.x,
+                      join_game_bounds.y,
+                      0,
+                      "Server IP Address:" );
+
+        al_draw_text( default_font,
+                      al_map_rgb( 127, 127, 127 ),
+                      join_game_bounds.x,
+                      join_game_bounds.y + al_get_font_line_height( default_font ),
+                      0,
+                      server_ip_address);
+    }
+
+    al_draw_bitmap( quit_game_bitmap,
+                    quit_game_bounds.x,
+                    quit_game_bounds.y,
+                    0 );
+
+}
+
+void render_playing_state()
+{
+    // Rendering code goes here
+    BOOST_FOREACH( m_element tmp, objs )
+    {
+        ((GameObject*)(tmp.second))->render();
+    }
+
+    BOOST_FOREACH( m_element tmp, players )
+    {
+        ((GameObject*)(tmp.second))->render();
+    }
+}
+
+void render_pause_state()
+{
+
+}
+
 int c_main( int /*argc*/, char **argv )
 {
     boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
     boost::asio::ip::tcp::resolver::query tcp_query( argv[2], "2001" );
     boost::asio::ip::tcp::resolver::iterator tcp_endpoint;
+
+    Launcher *launcher = new Launcher();
 
     tcp_endpoint = tcp_resolver.resolve( tcp_query );
 
@@ -272,6 +398,12 @@ int c_main( int /*argc*/, char **argv )
     client_queue = nullptr;
     display = nullptr;
     timer = nullptr;
+
+    game_state = WelcomeState;
+    memset( server_ip_address, '\0', sizeof( server_ip_address ) );
+    accepting_ip_address = false;
+
+    strcpy( server_ip_address, "255.255.255.255" );
 
     try
     {
@@ -283,6 +415,9 @@ int c_main( int /*argc*/, char **argv )
             MESSAGE( "Failed to initialize Allegro." );
             return -1;
         }
+
+        ALLEGRO_PATH *path = al_get_standard_path( ALLEGRO_RESOURCES_PATH );
+        al_change_directory( al_path_cstr( path, '/' ) );
 
         if( !al_install_mouse() )
         {
@@ -309,6 +444,20 @@ int c_main( int /*argc*/, char **argv )
             return -5;
         }
 
+        al_init_font_addon();
+        al_init_ttf_addon();
+
+        if( !( default_font = al_load_ttf_font( "assets/fonts/FRABK.TTF", 35, 0 ) ) )
+        {
+            MESSAGE( "Error loading font." );
+            al_destroy_timer( timer );
+            al_destroy_display( display );
+            return -6;
+        }
+
+        al_init_image_addon();
+        al_init_primitives_addon();
+
         al_register_event_source( client_queue, al_get_display_event_source( display ) );
         al_register_event_source( client_queue, al_get_timer_event_source( timer ) );
         al_register_event_source( client_queue, al_get_mouse_event_source() );
@@ -326,28 +475,92 @@ int c_main( int /*argc*/, char **argv )
 
             switch( event.type )
             {
-            case ALLEGRO_EVENT_TIMER:
+            case ALLEGRO_EVENT_TIMER: {
                 redraw = true;
-            break;
+            } break;
 
-            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN: {
+                int x, y;
+                packet_list padding;
+
+                x = event.mouse.x;
+                y = event.mouse.y;
+
+                MESSAGE( "location: " << x << ", " << y );
+
                 MESSAGE( "recieving event ALLEGRO_EVENT_MOUSE_BUTTON_DOWN" );
-                if( socket == nullptr)
+
+                switch( game_state )
                 {
-                    packet_list padding;
+                case WelcomeState: {
+                    // Did they click on the first box?
+                    if( IS_WITHIN( play_solo_bounds, x, y ) )
+                    {
+                        MESSAGE( "CLICKED PLAY SOLO" );
 
-                    socket = new boost::asio::ip::tcp::socket( client_io_service );
-                    boost::asio::connect( *socket, tcp_endpoint );
-                    MESSAGE( "Connected." );
+                        launcher->start( "PetEscape --server" );
 
-                    NetOps.async_write( padding, C_HELLO );
-                    MESSAGE( "sending C_HELLO" );
+                        if( socket == nullptr )
+                        {
+                            socket = new boost::asio::ip::tcp::socket( client_io_service );
+                            boost::asio::connect( *socket, tcp_endpoint );
+                            MESSAGE( "Connected." );
 
-                    NetOps.async_read();
+                            // padding.c_hello.solo = 1;
+                            NetOps.async_write( padding, C_HELLO );
+                            MESSAGE( "sending C_HELLO" );
+
+                            NetOps.async_read();
+                        }
+
+                        game_state = PlayingState;
+                    }
+
+                    // Did they click on the second box?
+                    // TODO: Eventually, this will differ from PlaySolo,
+                    // because play solo won't allow more than one connection.
+                    if( IS_WITHIN( host_game_bounds, x, y ) )
+                    {
+                        MESSAGE( "CLICKED HOST GAME" );
+
+                        launcher->start( "PetEscape --server" );
+
+                        if( socket == nullptr )
+                        {
+                            socket = new boost::asio::ip::tcp::socket( client_io_service );
+                            boost::asio::connect( *socket, tcp_endpoint );
+                            MESSAGE( "Connected." );
+
+                            // padding.c_hello.solo = 0;
+                            NetOps.async_write( padding, C_HELLO );
+                            MESSAGE( "sending C_HELLO" );
+
+                            NetOps.async_read();
+                        }
+
+                        game_state = PlayingState;
+                    }
+
+                    // Did they click on the third box?
+                    if( !accepting_ip_address && IS_WITHIN( join_game_bounds, x, y ) )
+                    {
+                        MESSAGE( "CLICKED JOIN GAME" );
+
+                        accepting_ip_address = true;
+                    }
+
+                    // Did they click on the fourth box?
+                    if( IS_WITHIN( quit_game_bounds, x, y ) )
+                    {
+                        MESSAGE( "CLICKED QUIT GAME" );
+                        should_exit = true;
+                    }
+
+                } break;
                 }
-            break;
+            } break;
 
-            case NETWORK_RECV:
+            case NETWORK_RECV: {
                 MESSAGE( "recieving event NETWORK_RECV" );
 
                 // Pass the packet off to the packet handler.
@@ -355,11 +568,11 @@ int c_main( int /*argc*/, char **argv )
 
                 // Clean up memory usage.
                 delete (network_packet *)event.user.data1;
-            break;
+            } break;
 
-            case NETWORK_CLOSE:
+            case NETWORK_CLOSE: {
                 MESSAGE( "recieving event NETWORK_CLOSE" );
-            break;
+            } break;
 
             case ALLEGRO_EVENT_DISPLAY_CLOSE: {
                 packet_list padding;
@@ -373,19 +586,18 @@ int c_main( int /*argc*/, char **argv )
 
             if( redraw && al_is_event_queue_empty( client_queue ) )
             {
-
                 // Set screen to white.
                 al_clear_to_color( al_map_rgb( 255, 255, 255 ) );
 
-                // Rendering code goes here
-                BOOST_FOREACH( m_element tmp, objs )
+                switch( game_state )
                 {
-                    ((GameObject*)(tmp.second))->render();
-                }
+                case WelcomeState:
+                    render_welcome_state();
+                    break;
 
-                BOOST_FOREACH( m_element tmp, players )
-                {
-                    ((GameObject*)(tmp.second))->render();
+                case PlayingState:
+                    render_playing_state();
+                    break;
                 }
 
                 al_flip_display();
@@ -394,9 +606,13 @@ int c_main( int /*argc*/, char **argv )
         }
 
         client_io_service.stop();
-
         io_thread.join();
 
+        launcher->kill();
+
+        al_destroy_path(path);
+
+        if( default_font ) al_destroy_font( default_font );
         if( timer )        al_destroy_timer( timer );
         if( display )      al_destroy_display( display );
         if( client_queue ) al_destroy_event_queue( client_queue );

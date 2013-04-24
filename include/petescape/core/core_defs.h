@@ -16,6 +16,7 @@
 #define MAX_CONNECTIONS 4
 
 #include <iostream>
+#include <stdint.h>
 
 #ifdef DEBUG
  #define MESSAGE( x ) do{ \
@@ -24,6 +25,25 @@
 #else
  #define MESSAGE( x )
 #endif
+
+typedef struct
+{
+    int32_t x;
+    int32_t y;
+    int32_t width;
+    int32_t height;
+} Rectange;
+
+#define IS_WITHIN(rect__, x__, y__) \
+    ((x__>=rect__.x)&&(x__<=(rect__.x+rect__.width)) && \
+    (y__>=rect__.y)&&(y__<=(rect__.y+rect__.height)))
+
+enum GameState
+{
+    WelcomeState,
+    PlayingState,
+    PausedState
+};
 
 enum GameObjectType
 {
