@@ -14,13 +14,22 @@ public:
 
     void start( const char *args );
     void kill();
+    char *getIP();
 
 private:
-    PyObject *module_name;
+    PyObject *server_module_name;
     PyObject *server_module;
     PyObject *server_module_contents;
     PyObject *server_start_func;
     PyObject *server_kill_func;
+
+    PyObject *ip_module_name;
+    PyObject *ip_module;
+    PyObject *ip_module_contents;
+    PyObject *ip_module_getip_func;
+
+    PyThreadState *mainThreadState, *myThreadState, *tempState;
+    PyInterpreterState *mainInterpreterState;
 };
 
 #endif // LAUNCHER_H
