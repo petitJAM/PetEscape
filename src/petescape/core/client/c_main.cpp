@@ -384,13 +384,7 @@ void render_pause_state()
 
 int c_main( int /*argc*/, char **argv )
 {
-    boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
-    boost::asio::ip::tcp::resolver::query tcp_query( argv[2], "2001" );
-    boost::asio::ip::tcp::resolver::iterator tcp_endpoint;
-
     Launcher *launcher = new Launcher();
-
-    tcp_endpoint = tcp_resolver.resolve( tcp_query );
 
     boost::asio::io_service::work work( client_io_service );
     boost::thread io_thread( boost::bind( &boost::asio::io_service::run, &client_io_service ) );
@@ -402,8 +396,6 @@ int c_main( int /*argc*/, char **argv )
     game_state = WelcomeState;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
     accepting_ip_address = false;
-
-    strcpy( server_ip_address, "255.255.255.255" );
 
     try
     {
@@ -502,6 +494,12 @@ int c_main( int /*argc*/, char **argv )
 
                         if( socket == nullptr )
                         {
+                            boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
+                            boost::asio::ip::tcp::resolver::query tcp_query( "127.0.0.1", "2001" );
+                            boost::asio::ip::tcp::resolver::iterator tcp_endpoint;
+
+                            tcp_endpoint = tcp_resolver.resolve( tcp_query );
+
                             socket = new boost::asio::ip::tcp::socket( client_io_service );
                             boost::asio::connect( *socket, tcp_endpoint );
                             MESSAGE( "Connected." );
@@ -527,6 +525,12 @@ int c_main( int /*argc*/, char **argv )
 
                         if( socket == nullptr )
                         {
+                            boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
+                            boost::asio::ip::tcp::resolver::query tcp_query( "127.0.0.1", "2001" );
+                            boost::asio::ip::tcp::resolver::iterator tcp_endpoint;
+
+                            tcp_endpoint = tcp_resolver.resolve( tcp_query );
+
                             socket = new boost::asio::ip::tcp::socket( client_io_service );
                             boost::asio::connect( *socket, tcp_endpoint );
                             MESSAGE( "Connected." );
@@ -546,7 +550,40 @@ int c_main( int /*argc*/, char **argv )
                     {
                         MESSAGE( "CLICKED JOIN GAME" );
 
-                        accepting_ip_address = true;
+                        char *ip = launcher->getIP();
+
+                        if( ip != nullptr )
+                        {
+                            strcpy( server_ip_address, ip );
+                            free( ip );
+
+                            MESSAGE( server_ip_address );
+                        }
+                        else
+                        {
+                            MESSAGE( "Nevermind." );
+                        }
+
+                        if( socket == nullptr )
+                        {
+                            boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
+                            boost::asio::ip::tcp::resolver::query tcp_query( server_ip_address, "2001" );
+                            boost::asio::ip::tcp::resolver::iterator tcp_endpoint;
+
+                            tcp_endpoint = tcp_resolver.resolve( tcp_query );
+
+                            socket = new boost::asio::ip::tcp::socket( client_io_service );
+                            boost::asio::connect( *socket, tcp_endpoint );
+                            MESSAGE( "Connected." );
+
+                            // padding.c_hello.solo = 0;
+                            NetOps.async_write( padding, C_HELLO );
+                            MESSAGE( "sending C_HELLO" );
+
+                            NetOps.async_read();
+                        }
+
+                        game_state = PlayingState;
                     }
 
                     // Did they click on the fourth box?
