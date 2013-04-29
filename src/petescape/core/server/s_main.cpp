@@ -250,7 +250,7 @@ public:
                 map->generate();
 
                 // take a peek
-                map->display();
+                //map->display();
             }
 
             NetworkOps.transfer_map( packet->head.sender_id, map );
