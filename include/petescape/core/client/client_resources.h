@@ -13,12 +13,8 @@
 #include "petescape/core/GameObject.h"
 #include "petescape/networking/common/net_struct.h"
 
-//namespace petescape {
-//namespace core {
-//namespace client {
-
 const float FPS = 15;
-const float MovementSpeed = 5.00;\
+const float MovementSpeed = 5.00;
 const float JumpInitVelocity = 60.00;
 
 enum MYKEYS {
@@ -34,51 +30,16 @@ ALLEGRO_BITMAP *play_solo_bitmap,
                *host_game_bitmap,
                *join_game_bitmap,
                *quit_game_bitmap,
-               *character_bitmaps[4],
-               *current_char_bitmap;
+               *character_bitmaps[4][8],
+               *current_char_bitmap[4];
 
 Rectange play_solo_bounds,
          host_game_bounds,
          join_game_bounds,
          quit_game_bounds,
-         current_char_bounds;
+         current_char_bounds[4];
 
 
 ALLEGRO_FONT *default_font;
-
-//ALLEGRO_DISPLAY *display;
-
-
-//ALLEGRO_EVENT_QUEUE *client_queue;
-
-//ALLEGRO_EVENT_SOURCE network_event_source;
-
-//ALLEGRO_TIMER *timer;
-//boost::asio::io_service client_io_service;
-//boost::asio::ip::tcp::socket *socket;
-
-//petescape::networking::common::network_packet input;
-
-//std::map<uint32_t, petescape::core::GameObject *>   objs;
-//std::map<uint32_t, petescape::core::PlayerObject *> players;
-
-//uint8_t    client_id;
-//uint8_t    map_length;
-//uint8_t    map_height;
-
-//petescape::core::GameMap   *map;
-
-//GameState  game_state;
-
-//int       num_map_packets_recieved;
-
-//char server_ip_address[ 20 ];
-//bool accepting_ip_address;
-
-void render_welcome_state();
-void render_playing_state();
-void render_paused_state();
-
-//}}}
 
 #endif // CLIENT_RESOURCES_H

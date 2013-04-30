@@ -264,6 +264,54 @@ public:
         }
     }
 
+    ALLEGRO_BITMAP** load_sprite_map( ALLEGRO_BITMAP *master,
+                                      int32_t t_w,
+                                      int32_t t_h,
+                                      int32_t &tile_count )
+    {
+        int img_w = al_get_bitmap_width( master );
+        int img_h = al_get_bitmap_height( master );
+        int h_count = img_w / t_w;
+        int v_count = img_h / t_h;
+        int index = 0;
+
+        ALLEGRO_BITMAP *original_target = al_get_target_bitmap();
+
+        ALLEGRO_BITMAP **tiles =
+                ( ALLEGRO_BITMAP** )malloc( sizeof( ALLEGRO_BITMAP* ) * h_count * v_count );
+
+        if( tiles == nullptr )
+            goto err;
+
+        for( int i = 0; i < v_count; ++i )
+        {
+            for( int j = 0; j < h_count; ++j )
+            {
+                tiles[ index ] = al_create_bitmap( t_w, t_h );
+
+                if( tiles[ index ] != nullptr )
+                {
+                    al_set_target_bitmap( tiles[ index ] );
+                    al_draw_bitmap( master, -( j * t_w ), -( i * t_h ), 0 );
+                }
+                else
+                {
+                    index = 0;
+                    free( tiles );
+                    goto err;
+                }
+
+                ++index;
+            }
+        }
+
+        al_set_target_bitmap( original_target );
+err:
+        tile_count = index;
+
+        return tiles;
+    }
+
 };
 
 namespace {
@@ -371,27 +419,53 @@ void render_playing_state()
     if( is_play_setup == false )
     {
         // Load character that we need.
-        character_bitmaps[0] = al_load_bitmap( "assets/character/walking0.bmp" );
-        character_bitmaps[1] = al_load_bitmap( "assets/character/walking1.bmp" );
-        character_bitmaps[2] = al_load_bitmap( "assets/character/still.bmp" );
-        character_bitmaps[3] = al_load_bitmap( "assets/character/jump.bmp" );
+        ALLEGRO_BITMAP *char_map = al_load_bitmap( "assets/character/character_map.bmp" );
+        int tile_count = 0;
+        ALLEGRO_BITMAP **characters = GameOps.load_sprite_map( char_map, 32, 64, tile_count );
 
-        current_char_bitmap=character_bitmaps[0];
-
-        if(!current_char_bitmap||
-           !character_bitmaps[0]||
-           !character_bitmaps[1]||
-           !character_bitmaps[2]||
-           !character_bitmaps[3])
+        if( tile_count != ( 8 * 4 ) )
         {
-            MESSAGE( "Unable to load bitmaps. Exiting." );
-            exit( 2 );
+            MESSAGE( "Didn't load correct image count... " << tile_count );
+            exit( 1 );
         }
 
-        current_char_bounds.x = 0 + al_get_bitmap_width( current_char_bitmap ) / 2;
-        current_char_bounds.y = al_get_display_height( display ) - al_get_bitmap_height(current_char_bitmap );
-        current_char_bounds.width = al_get_bitmap_width( current_char_bitmap );
-        current_char_bounds.height = al_get_bitmap_height( current_char_bitmap );
+        if( characters != nullptr )
+        {
+            for( int i = 0; i < 4; ++i )
+            {
+                for( int j = 0; j < 8; ++j )
+                {
+                    character_bitmaps[ i ][ j ] = characters[ i * 8 + j ];
+                }
+
+                current_char_bitmap[ i ] = characters[ i * 8 ];
+                current_char_bounds[ i ].x = 0;
+                current_char_bounds[ i ].y = 0;
+                current_char_bounds[ i ].width = 32;
+                current_char_bounds[ i ].height = 64;
+            }
+        }
+//        character_bitmaps[client_id][0] = al_load_bitmap( "assets/character/walking0.bmp" );
+//        character_bitmaps[client_id][1] = al_load_bitmap( "assets/character/walking1.bmp" );
+//        character_bitmaps[client_id][2] = al_load_bitmap( "assets/character/still.bmp" );
+//        character_bitmaps[client_id][3] = al_load_bitmap( "assets/character/jump.bmp" );
+
+//        current_char_bitmap[client_id]=character_bitmaps[0];
+
+//        if(!current_char_bitmap||
+//           !character_bitmaps[0]||
+//           !character_bitmaps[1]||
+//           !character_bitmaps[2]||
+//           !character_bitmaps[3])
+//        {
+//            MESSAGE( "Unable to load bitmaps. Exiting." );
+//            exit( 2 );
+//        }
+
+//        current_char_bounds[client_id].x = 0 + al_get_bitmap_width( current_char_bitmap[client_id] ) / 2;
+//        current_char_bounds[client_id].y = al_get_display_height( display ) - al_get_bitmap_height(current_char_bitmap[client_id] );
+//        current_char_bounds[client_id].width = al_get_bitmap_width( current_char_bitmap[client_id] );
+//        current_char_bounds[client_id].height = al_get_bitmap_height( current_char_bitmap[client_id] );
 
         is_play_setup = true;
     }
@@ -404,10 +478,14 @@ void render_playing_state()
 
     BOOST_FOREACH( m_element tmp, players )
     {
-        ((GameObject*)(tmp.second))->render();
+        al_draw_bitmap( current_char_bitmap[ ((GameObject*)(tmp.second))->getID() ],
+                        current_char_bounds[ ((GameObject*)(tmp.second))->getID() ].x,
+                        current_char_bounds[ ((GameObject*)(tmp.second))->getID() ].y,
+                        0 );
+//        ((GameObject*)(tmp.second))->render();
     }
 
-    al_draw_bitmap( current_char_bitmap, current_char_bounds.x,current_char_bounds.y, 0);
+//    al_draw_bitmap( current_char_bitmap, current_char_bounds.x,current_char_bounds.y, 0);
 }
 
 void render_pause_state()
@@ -516,36 +594,41 @@ int c_main( int /*argc*/, char **argv )
 
                 if( game_state == PlayingState )
                 {
-                    if(jump==JUMPIT)
+                    if( jump == JUMPIT )
                     {
-                        if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))//TODO: change!  on base
+                        if( current_char_bounds[ client_id ].y >= ( al_get_display_height( display ) - current_char_bounds[ client_id ].height ) )//TODO: change!  on base
                         {
                             MESSAGE("collide");
-                            jump=0;
+                            jump = 0;
                         }
-                        if(key[KEY_UP])
+                        if( key[ KEY_UP ] )
                         {
-                            current_char_bitmap=character_bitmaps[3];
-                            jump=JumpInitVelocity;
-                            JUMPING=true;
+                            // TODO: This should be 3 OR 7...
+                            current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 3 ];
+                            jump = JumpInitVelocity;
+                            JUMPING = true;
                         }
                     }
                     else
                     {
-                        current_char_bitmap=character_bitmaps[3];
-                        current_char_bounds.y-=jump/3;
-                        jump-=6;
+                        // TODO: Again, should be 3 or 7 by facing.
+                        current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 3 ];
+                        current_char_bounds[ client_id ].y -= jump / 3;
+                        jump -= 6;
                     }
-                    if(jump<0)
+
+                    if( jump < 0 )
                     {
 
-                        if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))
+                        if( current_char_bounds[ client_id ].y >= ( al_get_display_height( display ) - current_char_bounds[ client_id ].height ) )
                         {
-                            jump=JUMPIT;
-                            JUMPING=false;
-                            MESSAGE("collide");
-                            while(current_char_bounds.y> (al_get_display_height(display)-current_char_bounds.height)){
-                                current_char_bounds.y-=2;
+                            jump = JUMPIT;
+                            JUMPING = false;
+                            MESSAGE( "collide ");
+
+                            while( current_char_bounds[ client_id ].y > ( al_get_display_height( display ) - current_char_bounds[ client_id ].height ) )
+                            {
+                                current_char_bounds[ client_id ].y -= 2;
                             }
                         }
 
@@ -562,12 +645,13 @@ int c_main( int /*argc*/, char **argv )
 //                      MESSAGE("Key_up");
 //                   }
 
-                    if(key[KEY_DOWN])
+                    if( key[ KEY_DOWN ] )
                     {
-                        if(current_char_bounds.y<=(al_get_display_height( display )-current_char_bounds.height))
+                        // Down doesn't do anything... this can be removed.
+                        if( current_char_bounds[ client_id ].y <= ( al_get_display_height( display ) - current_char_bounds[ client_id ].height ) )
                         {
-                            current_char_bitmap=character_bitmaps[3];
-                            current_char_bounds.y += MovementSpeed;
+                            current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 3 ];
+                            current_char_bounds[ client_id ].y += MovementSpeed;
 
                         }
 //                       current_char_bounds.y += 4.0;
@@ -576,47 +660,50 @@ int c_main( int /*argc*/, char **argv )
 
                     }
 
-                    if(key[KEY_LEFT])
+                    if( key[ KEY_LEFT ] )
                     {
-                        if(current_char_bounds.x>0)
+                        if( current_char_bounds[ client_id ].x > 0 )
                         {
-                            current_char_bounds.x -= MovementSpeed;
-                            if(!JUMPING)
+                            current_char_bounds[ client_id ].x -= MovementSpeed;
+
+                            if( !JUMPING )
                             {
-                                if(walking_status%2)
+                                if( walking_status % 2 )
                                 {
-                                    current_char_bitmap=character_bitmaps[0];
+                                    current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 1 ];
 
                                 }
                                 else
                                 {
-                                    current_char_bitmap=character_bitmaps[1];
+                                    current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 2 ];
 
                                 }
-                                walking_status = (walking_status+1)%2;
+
+                                walking_status = ( walking_status + 1 ) % 2;
                             }
                         }
 
                         MESSAGE("Key_left");
                     }
 
-                    if(key[KEY_RIGHT])
+                    if( key[ KEY_RIGHT ] )
                     {
-                        if(current_char_bounds.x<= (al_get_display_width(display)-current_char_bounds.width))
+                        if( current_char_bounds[ client_id ].x <= ( al_get_display_width( display ) - current_char_bounds[ client_id ].width ) )
                         {
-                            current_char_bounds.x += MovementSpeed;
-                            if(!JUMPING)
+                            current_char_bounds[ client_id ].x += MovementSpeed;
+
+                            if( !JUMPING )
                             {
-                                if(walking_status%2)
+                                if( walking_status % 2 )
                                 {
-                                    current_char_bitmap=character_bitmaps[0];
+                                    current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 5 ];
                                 }
                                 else
                                 {
-                                    current_char_bitmap=character_bitmaps[1];
+                                    current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 6 ];
                                 }
 
-                                walking_status = (walking_status+1)%2;
+                                walking_status = ( walking_status + 1 ) % 2;
                             }
                         }
 
@@ -624,9 +711,10 @@ int c_main( int /*argc*/, char **argv )
 
                     }
 
-                    if(!key[KEY_RIGHT]&&!key[KEY_LEFT]&&!key[KEY_UP]&&!key[KEY_DOWN])
+                    if( !key[ KEY_RIGHT ] && !key[ KEY_LEFT ] && !key[ KEY_UP ] && !key[ KEY_DOWN ] )
                     {
-                        current_char_bitmap=character_bitmaps[2];
+                        // Or 4, depending on facing.
+                        current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 0 ];
                     }
                 }
 
