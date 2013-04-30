@@ -381,7 +381,7 @@ void render_playing_state()
         }
 
         character_bounds.x = 0 + al_get_bitmap_width( character_bitmap ) / 2;
-        character_bounds.y = 0 + al_get_bitmap_height(character_bitmap ) / 2;
+        character_bounds.y = al_get_display_height( display ) - al_get_bitmap_height(character_bitmap );
         character_bounds.width = al_get_bitmap_width( character_bitmap );
         character_bounds.height = al_get_bitmap_height( character_bitmap );
 
@@ -418,7 +418,8 @@ int c_main( int /*argc*/, char **argv )
     client_queue = nullptr;
     display = nullptr;
     timer = nullptr;
-    bool key[4] = { false, false, false, false };
+    bool key[4] = { false, false, false, false};
+    bool JUMPING = false;
 
     game_state = WelcomeState;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
@@ -503,29 +504,47 @@ int c_main( int /*argc*/, char **argv )
             case ALLEGRO_EVENT_TIMER: {
 
                    if(key[KEY_UP]) {
-                       character_bounds.y -= 4.0;
+                       //character_bounds.y -= 4.0;
+
+                       if(character_bounds.y>=0)
+                       {
+                           JUMPING=true;
+                           character_bounds.y -= 4.0;
+
+                       }
+
 
                       MESSAGE("Key_up");
                    }
 
                    if(key[KEY_DOWN]) {
-                       character_bounds.y += 4.0;
+                       if(character_bounds.y<=(al_get_display_height( display )-character_bounds.height))
+                           character_bounds.y += 4.0;
+//                       character_bounds.y += 4.0;
 
                       MESSAGE("Key_down");
 
                    }
 
                    if(key[KEY_LEFT]) {
-                      character_bounds.x -= 4.0;
+                       if(character_bounds.x>0){
+                            character_bounds.x -= 4.0;
+                       }
                       MESSAGE("Key_left");
 
                    }
 
                    if(key[KEY_RIGHT]) {
-                      character_bounds.x += 4.0;
+                       if(character_bounds.x<= (al_get_display_width(display)-character_bounds.width))
+                             character_bounds.x += 4.0;
                       MESSAGE("Key_right");
 
                    }
+
+                   if(character_bounds.y<= (al_get_display_height(display)-character_bounds.height)&&!JUMPING){
+                       character_bounds.y += 4.0;
+                   }
+                   JUMPING=false;
 
                 redraw = true;
 
@@ -549,6 +568,7 @@ int c_main( int /*argc*/, char **argv )
                       case ALLEGRO_KEY_RIGHT:
                          key[KEY_RIGHT] = true;
                          break;
+
 
 
                    }
