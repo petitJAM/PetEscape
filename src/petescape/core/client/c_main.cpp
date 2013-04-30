@@ -407,8 +407,7 @@ void render_playing_state()
         ((GameObject*)(tmp.second))->render();
     }
 
-
-        al_draw_bitmap( current_char_bitmap, current_char_bounds.x,current_char_bounds.y, 0);
+    al_draw_bitmap( current_char_bitmap, current_char_bounds.x,current_char_bounds.y, 0);
 }
 
 void render_pause_state()
@@ -417,8 +416,6 @@ void render_pause_state()
 }
 
 int c_main( int /*argc*/, char **argv )
-
-
 {
     Launcher *launcher = new Launcher();
 
@@ -434,7 +431,6 @@ int c_main( int /*argc*/, char **argv )
     bool JUMPING = false;
     int walking_status = 0;
     int dy =0;// TODO:velocity in y change later
-
 
     game_state = WelcomeState;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
@@ -455,8 +451,8 @@ int c_main( int /*argc*/, char **argv )
         al_change_directory( al_path_cstr( path, '/' ) );
 
         if(!al_install_keyboard()) {
-           fprintf(stderr, "failed to initialize the keyboard!\n");
-           return -1;
+            MESSAGE( "failed to initialize the keyboard!" );
+            return -1;
         }
 
         if( !al_install_mouse() )
@@ -508,7 +504,6 @@ int c_main( int /*argc*/, char **argv )
 
         al_start_timer( timer );
 
-
         // Allegro Event loop.
         while( !should_exit )
         {
@@ -519,40 +514,42 @@ int c_main( int /*argc*/, char **argv )
             {
             case ALLEGRO_EVENT_TIMER: {
 
-                if(jump==JUMPIT)
+                if( game_state == PlayingState )
                 {
-                    if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))//TODO: change!  on base
+                    if(jump==JUMPIT)
                     {
-                        MESSAGE("collide");
-                        jump=0;
-                    }
-                    if(key[KEY_UP])
-                    {
-                        current_char_bitmap=character_bitmaps[3];
-                        jump=JumpInitVelocity;
-                        JUMPING=true;
-                    }
-                }
-                else
-                {
-                    current_char_bitmap=character_bitmaps[3];
-                    current_char_bounds.y-=jump/3;
-                    jump-=6;
-                }
-                if(jump<0)
-                {
-
-                    if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))
-                    {
-                        jump=JUMPIT;
-                        JUMPING=false;
-                        MESSAGE("collide");
-                        while(current_char_bounds.y> (al_get_display_height(display)-current_char_bounds.height)){
-                            current_char_bounds.y-=2;
+                        if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))//TODO: change!  on base
+                        {
+                            MESSAGE("collide");
+                            jump=0;
+                        }
+                        if(key[KEY_UP])
+                        {
+                            current_char_bitmap=character_bitmaps[3];
+                            jump=JumpInitVelocity;
+                            JUMPING=true;
                         }
                     }
+                    else
+                    {
+                        current_char_bitmap=character_bitmaps[3];
+                        current_char_bounds.y-=jump/3;
+                        jump-=6;
+                    }
+                    if(jump<0)
+                    {
 
-                }
+                        if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))
+                        {
+                            jump=JUMPIT;
+                            JUMPING=false;
+                            MESSAGE("collide");
+                            while(current_char_bounds.y> (al_get_display_height(display)-current_char_bounds.height)){
+                                current_char_bounds.y-=2;
+                            }
+                        }
+
+                    }
 
 //                   if(key[KEY_UP]) {
 //                       ROCKET:
@@ -565,23 +562,27 @@ int c_main( int /*argc*/, char **argv )
 //                      MESSAGE("Key_up");
 //                   }
 
-                   if(key[KEY_DOWN]) {
-                       if(current_char_bounds.y<=(al_get_display_height( display )-current_char_bounds.height))
-                       {
-                           current_char_bitmap=character_bitmaps[3];
-                           current_char_bounds.y += MovementSpeed;
+                    if(key[KEY_DOWN])
+                    {
+                        if(current_char_bounds.y<=(al_get_display_height( display )-current_char_bounds.height))
+                        {
+                            current_char_bitmap=character_bitmaps[3];
+                            current_char_bounds.y += MovementSpeed;
 
-                       }
+                        }
 //                       current_char_bounds.y += 4.0;
 
-                      MESSAGE("Key_down");
+                       MESSAGE("Key_down");
 
-                   }
+                    }
 
-                   if(key[KEY_LEFT]) {
-                       if(current_char_bounds.x>0){
+                    if(key[KEY_LEFT])
+                    {
+                        if(current_char_bounds.x>0)
+                        {
                             current_char_bounds.x -= MovementSpeed;
-                            if(!JUMPING){
+                            if(!JUMPING)
+                            {
                                 if(walking_status%2)
                                 {
                                     current_char_bitmap=character_bitmaps[0];
@@ -594,38 +595,40 @@ int c_main( int /*argc*/, char **argv )
                                 }
                                 walking_status = (walking_status+1)%2;
                             }
-                       }
-                      MESSAGE("Key_left");
+                        }
 
-                   }
+                        MESSAGE("Key_left");
+                    }
 
-                   if(key[KEY_RIGHT]) {
-                       if(current_char_bounds.x<= (al_get_display_width(display)-current_char_bounds.width))
-                       {
-                           current_char_bounds.x += MovementSpeed;
-                           if(!JUMPING){
-                               if(walking_status%2)
-                               {
-                                   current_char_bitmap=character_bitmaps[0];
+                    if(key[KEY_RIGHT])
+                    {
+                        if(current_char_bounds.x<= (al_get_display_width(display)-current_char_bounds.width))
+                        {
+                            current_char_bounds.x += MovementSpeed;
+                            if(!JUMPING)
+                            {
+                                if(walking_status%2)
+                                {
+                                    current_char_bitmap=character_bitmaps[0];
+                                }
+                                else
+                                {
+                                    current_char_bitmap=character_bitmaps[1];
+                                }
 
-                               }
-                               else
-                               {
-                                   current_char_bitmap=character_bitmaps[1];
-                               }
-                               walking_status = (walking_status+1)%2;
-                           }
-                       }
+                                walking_status = (walking_status+1)%2;
+                            }
+                        }
 
-                      MESSAGE("Key_right");
+                        MESSAGE("Key_right");
 
-                   }
+                    }
 
-                   if(!key[KEY_RIGHT]&&!key[KEY_LEFT]&&!key[KEY_UP]&&!key[KEY_DOWN]){
-                       current_char_bitmap=character_bitmaps[2];
-                   }
-
-
+                    if(!key[KEY_RIGHT]&&!key[KEY_LEFT]&&!key[KEY_UP]&&!key[KEY_DOWN])
+                    {
+                        current_char_bitmap=character_bitmaps[2];
+                    }
+                }
 
                 redraw = true;
 
@@ -633,55 +636,56 @@ int c_main( int /*argc*/, char **argv )
 
             case ALLEGRO_EVENT_KEY_DOWN: {
 
-                   switch(event.keyboard.keycode) {
-                      case ALLEGRO_KEY_UP:
-                         key[KEY_UP] = true;
-                         break;
+                if( game_state == PlayingState )
+                {
+                    switch(event.keyboard.keycode)
+                    {
+                    case ALLEGRO_KEY_UP:
+                        key[KEY_UP] = true;
+                        break;
 
-                      case ALLEGRO_KEY_DOWN:
-                         key[KEY_DOWN] = true;
-                         break;
+                    case ALLEGRO_KEY_DOWN:
+                        key[KEY_DOWN] = true;
+                        break;
 
-                      case ALLEGRO_KEY_LEFT:
-                         key[KEY_LEFT] = true;
-                         break;
+                    case ALLEGRO_KEY_LEFT:
+                        key[KEY_LEFT] = true;
+                        break;
 
-                      case ALLEGRO_KEY_RIGHT:
-                         key[KEY_RIGHT] = true;
-                         break;
+                    case ALLEGRO_KEY_RIGHT:
+                        key[KEY_RIGHT] = true;
+                        break;
 
-
-
-                   }
-
-
-             } break;
-
-            case ALLEGRO_EVENT_KEY_UP: {
-
-                   switch(event.keyboard.keycode) {
-                      case ALLEGRO_KEY_UP:
-                         key[KEY_UP] = false;
-                         break;
-
-                      case ALLEGRO_KEY_DOWN:
-                         key[KEY_DOWN] = false;
-                         break;
-
-                      case ALLEGRO_KEY_LEFT:
-                         key[KEY_LEFT] = false;
-                         break;
-
-                      case ALLEGRO_KEY_RIGHT:
-                         key[KEY_RIGHT] = false;
-                         break;
-
-                      case ALLEGRO_KEY_ESCAPE:
-                         should_exit = true;
-                         break;
-                   }
+                    }
+                }
 
             } break;
+
+            case ALLEGRO_EVENT_KEY_UP: {
+               if( game_state == PlayingState )
+               {
+                   switch(event.keyboard.keycode)
+                   {
+                   case ALLEGRO_KEY_UP:
+                       key[KEY_UP] = false;
+                       break;
+
+                   case ALLEGRO_KEY_DOWN:
+                       key[KEY_DOWN] = false;
+                       break;
+
+                   case ALLEGRO_KEY_LEFT:
+                       key[KEY_LEFT] = false;
+                       break;
+
+                   case ALLEGRO_KEY_RIGHT:
+                       key[KEY_RIGHT] = false;
+                       break;
+
+                   }
+               }
+
+           } break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN: {
                 int x, y;
