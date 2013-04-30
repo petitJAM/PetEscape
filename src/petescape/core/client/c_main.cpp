@@ -529,14 +529,15 @@ int c_main( int /*argc*/, char **argv )
                     if(key[KEY_UP])
                     {
                         current_char_bitmap=character_bitmaps[3];
-                        jump=30;
+                        jump=JumpInitVelocity;
+                        JUMPING=true;
                     }
                 }
                 else
                 {
                     current_char_bitmap=character_bitmaps[3];
                     current_char_bounds.y-=jump/3;
-                    jump--;
+                    jump-=6;
                 }
                 if(jump<0)
                 {
@@ -544,6 +545,7 @@ int c_main( int /*argc*/, char **argv )
                     if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))
                     {
                         jump=JUMPIT;
+                        JUMPING=false;
                         MESSAGE("collide");
                         while(current_char_bounds.y> (al_get_display_height(display)-current_char_bounds.height)){
                             current_char_bounds.y-=2;
@@ -567,7 +569,7 @@ int c_main( int /*argc*/, char **argv )
                        if(current_char_bounds.y<=(al_get_display_height( display )-current_char_bounds.height))
                        {
                            current_char_bitmap=character_bitmaps[3];
-                           current_char_bounds.y += 4.0;
+                           current_char_bounds.y += MovementSpeed;
 
                        }
 //                       current_char_bounds.y += 4.0;
@@ -578,19 +580,20 @@ int c_main( int /*argc*/, char **argv )
 
                    if(key[KEY_LEFT]) {
                        if(current_char_bounds.x>0){
-                            current_char_bounds.x -= 4.0;
-                            if(walking_status%2&&!JUMPING)
-                            {
-                                current_char_bitmap=character_bitmaps[0];
+                            current_char_bounds.x -= MovementSpeed;
+                            if(!JUMPING){
+                                if(walking_status%2)
+                                {
+                                    current_char_bitmap=character_bitmaps[0];
 
+                                }
+                                else
+                                {
+                                    current_char_bitmap=character_bitmaps[1];
+
+                                }
+                                walking_status = (walking_status+1)%2;
                             }
-                            else
-                            {
-                                current_char_bitmap=character_bitmaps[1];
-
-                            }
-                            walking_status = (walking_status+1)%2;
-
                        }
                       MESSAGE("Key_left");
 
@@ -599,18 +602,19 @@ int c_main( int /*argc*/, char **argv )
                    if(key[KEY_RIGHT]) {
                        if(current_char_bounds.x<= (al_get_display_width(display)-current_char_bounds.width))
                        {
-                           current_char_bounds.x += 4.0;
-                           if(walking_status%2&&!JUMPING)
-                           {
-                               current_char_bitmap=character_bitmaps[0];
+                           current_char_bounds.x += MovementSpeed;
+                           if(!JUMPING){
+                               if(walking_status%2)
+                               {
+                                   current_char_bitmap=character_bitmaps[0];
 
+                               }
+                               else
+                               {
+                                   current_char_bitmap=character_bitmaps[1];
+                               }
+                               walking_status = (walking_status+1)%2;
                            }
-                           else
-                           {
-                               current_char_bitmap=character_bitmaps[1];
-                           }
-                           walking_status = (walking_status+1)%2;
-
                        }
 
                       MESSAGE("Key_right");
