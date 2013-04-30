@@ -17,6 +17,13 @@
 //namespace core {
 //namespace client {
 
+const float FPS = 60;
+
+enum MYKEYS {
+   KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT
+};
+
+
 using namespace petescape::core;
 
 typedef std::pair< uint32_t, GameObject* > m_element;
@@ -24,12 +31,15 @@ typedef std::pair< uint32_t, GameObject* > m_element;
 ALLEGRO_BITMAP *play_solo_bitmap,
                *host_game_bitmap,
                *join_game_bitmap,
-               *quit_game_bitmap;
+               *quit_game_bitmap,
+               *character_bitmap;
 
 Rectange play_solo_bounds,
          host_game_bounds,
          join_game_bounds,
-         quit_game_bounds;
+         quit_game_bounds,
+         character_bounds;
+
 
 ALLEGRO_FONT *default_font;
 

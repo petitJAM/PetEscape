@@ -44,3 +44,7 @@ HEADERS += \
     include/petescape/core/GameMap.h \
     include/petescape/core/Block.h \
     include/petescape/core/BlockMap.h
+
+OTHER_FILES += \
+    PetEscape.mine.pro
+
