@@ -285,7 +285,7 @@ void render_welcome_state()
         if( !play_solo_bitmap ||
             !host_game_bitmap ||
             !join_game_bitmap ||
-            !quit_game_bitmap )
+            !quit_game_bitmap)
         {
             MESSAGE( "Unable to load bitmaps. Exiting." );
             exit( 2 );
@@ -364,7 +364,30 @@ void render_welcome_state()
 }
 
 void render_playing_state()
+
 {
+    static bool is_play_setup = false;
+
+    if( is_play_setup == false )
+    {
+        // Load character that we need.
+        character_bitmap = al_load_bitmap( "assets/welcome_screen/jump.bmp" );
+
+
+        if(!character_bitmap )
+        {
+            MESSAGE( "Unable to load bitmaps. Exiting." );
+            exit( 2 );
+        }
+
+        character_bounds.x = 0 + al_get_bitmap_width( character_bitmap ) / 2;
+        character_bounds.y = 0 + al_get_bitmap_height(character_bitmap ) / 2;
+        character_bounds.width = al_get_bitmap_width( character_bitmap );
+        character_bounds.height = al_get_bitmap_height( character_bitmap );
+
+        is_play_setup = true;
+    }
+
     // Rendering code goes here
     BOOST_FOREACH( m_element tmp, objs )
     {
@@ -375,6 +398,9 @@ void render_playing_state()
     {
         ((GameObject*)(tmp.second))->render();
     }
+
+
+        al_draw_bitmap( character_bitmap, character_bounds.x,character_bounds.y, 0);
 }
 
 void render_pause_state()
@@ -392,6 +418,7 @@ int c_main( int /*argc*/, char **argv )
     client_queue = nullptr;
     display = nullptr;
     timer = nullptr;
+    bool key[4] = { false, false, false, false };
 
     game_state = WelcomeState;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
@@ -411,6 +438,11 @@ int c_main( int /*argc*/, char **argv )
         ALLEGRO_PATH *path = al_get_standard_path( ALLEGRO_RESOURCES_PATH );
         al_change_directory( al_path_cstr( path, '/' ) );
 
+        if(!al_install_keyboard()) {
+           fprintf(stderr, "failed to initialize the keyboard!\n");
+           return -1;
+        }
+
         if( !al_install_mouse() )
         {
             MESSAGE( "Error initializing Allegro mouse driver." );
@@ -423,7 +455,7 @@ int c_main( int /*argc*/, char **argv )
             return -3;
         }
 
-        if( !( timer = al_create_timer( 1.0 / 30.0 ) ) )
+        if( !( timer = al_create_timer( 1.0 / FPS ) ) )
         {
             MESSAGE( "Error initializing Allegro timer." );
             return -4;
@@ -453,6 +485,7 @@ int c_main( int /*argc*/, char **argv )
         al_register_event_source( client_queue, al_get_display_event_source( display ) );
         al_register_event_source( client_queue, al_get_timer_event_source( timer ) );
         al_register_event_source( client_queue, al_get_mouse_event_source() );
+        al_register_event_source(client_queue, al_get_keyboard_event_source());
 
         al_init_user_event_source( &network_event_source );
         al_register_event_source( client_queue, &network_event_source );
@@ -468,7 +501,85 @@ int c_main( int /*argc*/, char **argv )
             switch( event.type )
             {
             case ALLEGRO_EVENT_TIMER: {
+
+                   if(key[KEY_UP]) {
+                       character_bounds.y -= 4.0;
+
+                      MESSAGE("Key_up");
+                   }
+
+                   if(key[KEY_DOWN]) {
+                       character_bounds.y += 4.0;
+
+                      MESSAGE("Key_down");
+
+                   }
+
+                   if(key[KEY_LEFT]) {
+                      character_bounds.x -= 4.0;
+                      MESSAGE("Key_left");
+
+                   }
+
+                   if(key[KEY_RIGHT]) {
+                      character_bounds.x += 4.0;
+                      MESSAGE("Key_right");
+
+                   }
+
                 redraw = true;
+
+            } break;
+
+            case ALLEGRO_EVENT_KEY_DOWN: {
+
+                   switch(event.keyboard.keycode) {
+                      case ALLEGRO_KEY_UP:
+                         key[KEY_UP] = true;
+                         break;
+
+                      case ALLEGRO_KEY_DOWN:
+                         key[KEY_DOWN] = true;
+                         break;
+
+                      case ALLEGRO_KEY_LEFT:
+                         key[KEY_LEFT] = true;
+                         break;
+
+                      case ALLEGRO_KEY_RIGHT:
+                         key[KEY_RIGHT] = true;
+                         break;
+
+
+                   }
+
+
+             } break;
+
+            case ALLEGRO_EVENT_KEY_UP: {
+
+                   switch(event.keyboard.keycode) {
+                      case ALLEGRO_KEY_UP:
+                         key[KEY_UP] = false;
+                         break;
+
+                      case ALLEGRO_KEY_DOWN:
+                         key[KEY_DOWN] = false;
+                         break;
+
+                      case ALLEGRO_KEY_LEFT:
+                         key[KEY_LEFT] = false;
+                         break;
+
+                      case ALLEGRO_KEY_RIGHT:
+                         key[KEY_RIGHT] = false;
+                         break;
+
+                      case ALLEGRO_KEY_ESCAPE:
+                         should_exit = true;
+                         break;
+                   }
+
             } break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN: {
