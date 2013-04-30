@@ -371,19 +371,27 @@ void render_playing_state()
     if( is_play_setup == false )
     {
         // Load character that we need.
-        character_bitmap = al_load_bitmap( "assets/welcome_screen/jump.bmp" );
+        character_bitmaps[0] = al_load_bitmap( "assets/character/walking0.bmp" );
+        character_bitmaps[1] = al_load_bitmap( "assets/character/walking1.bmp" );
+        character_bitmaps[2] = al_load_bitmap( "assets/character/still.bmp" );
+        character_bitmaps[3] = al_load_bitmap( "assets/character/jump.bmp" );
 
+        current_char_bitmap=character_bitmaps[0];
 
-        if(!character_bitmap )
+        if(!current_char_bitmap||
+           !character_bitmaps[0]||
+           !character_bitmaps[1]||
+           !character_bitmaps[2]||
+           !character_bitmaps[3])
         {
             MESSAGE( "Unable to load bitmaps. Exiting." );
             exit( 2 );
         }
 
-        character_bounds.x = 0 + al_get_bitmap_width( character_bitmap ) / 2;
-        character_bounds.y = al_get_display_height( display ) - al_get_bitmap_height(character_bitmap );
-        character_bounds.width = al_get_bitmap_width( character_bitmap );
-        character_bounds.height = al_get_bitmap_height( character_bitmap );
+        current_char_bounds.x = 0 + al_get_bitmap_width( current_char_bitmap ) / 2;
+        current_char_bounds.y = al_get_display_height( display ) - al_get_bitmap_height(current_char_bitmap );
+        current_char_bounds.width = al_get_bitmap_width( current_char_bitmap );
+        current_char_bounds.height = al_get_bitmap_height( current_char_bitmap );
 
         is_play_setup = true;
     }
@@ -400,7 +408,7 @@ void render_playing_state()
     }
 
 
-        al_draw_bitmap( character_bitmap, character_bounds.x,character_bounds.y, 0);
+        al_draw_bitmap( current_char_bitmap, current_char_bounds.x,current_char_bounds.y, 0);
 }
 
 void render_pause_state()
@@ -409,6 +417,8 @@ void render_pause_state()
 }
 
 int c_main( int /*argc*/, char **argv )
+
+
 {
     Launcher *launcher = new Launcher();
 
@@ -419,7 +429,12 @@ int c_main( int /*argc*/, char **argv )
     display = nullptr;
     timer = nullptr;
     bool key[4] = { false, false, false, false};
+    int JUMPIT =1600;
+    int jump = JUMPIT;
     bool JUMPING = false;
+    int walking_status = 0;
+    int dy =0;// TODO:velocity in y change later
+
 
     game_state = WelcomeState;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
@@ -493,6 +508,7 @@ int c_main( int /*argc*/, char **argv )
 
         al_start_timer( timer );
 
+
         // Allegro Event loop.
         while( !should_exit )
         {
@@ -503,48 +519,109 @@ int c_main( int /*argc*/, char **argv )
             {
             case ALLEGRO_EVENT_TIMER: {
 
-                   if(key[KEY_UP]) {
-                       //character_bounds.y -= 4.0;
+                if(jump==JUMPIT)
+                {
+                    if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))//TODO: change!  on base
+                    {
+                        MESSAGE("collide");
+                        jump=0;
+                    }
+                    if(key[KEY_UP])
+                    {
+                        current_char_bitmap=character_bitmaps[3];
+                        jump=30;
+                    }
+                }
+                else
+                {
+                    current_char_bitmap=character_bitmaps[3];
+                    current_char_bounds.y-=jump/3;
+                    jump--;
+                }
+                if(jump<0)
+                {
 
-                       if(character_bounds.y>=0)
-                       {
-                           JUMPING=true;
-                           character_bounds.y -= 4.0;
+                    if(current_char_bounds.y>= (al_get_display_height(display)-current_char_bounds.height))
+                    {
+                        jump=JUMPIT;
+                        MESSAGE("collide");
+                        while(current_char_bounds.y> (al_get_display_height(display)-current_char_bounds.height)){
+                            current_char_bounds.y-=2;
+                        }
+                    }
 
-                       }
+                }
 
-
-                      MESSAGE("Key_up");
-                   }
+//                   if(key[KEY_UP]) {
+//                       ROCKET:
+//                       if(current_char_bounds.y>=0)
+//                       {
+//                           current_char_bitmap=character_bitmaps[3];
+//                           JUMPING=true;
+//                           current_char_bounds.y -= 4.0;
+//                       }
+//                      MESSAGE("Key_up");
+//                   }
 
                    if(key[KEY_DOWN]) {
-                       if(character_bounds.y<=(al_get_display_height( display )-character_bounds.height))
-                           character_bounds.y += 4.0;
-//                       character_bounds.y += 4.0;
+                       if(current_char_bounds.y<=(al_get_display_height( display )-current_char_bounds.height))
+                       {
+                           current_char_bitmap=character_bitmaps[3];
+                           current_char_bounds.y += 4.0;
+
+                       }
+//                       current_char_bounds.y += 4.0;
 
                       MESSAGE("Key_down");
 
                    }
 
                    if(key[KEY_LEFT]) {
-                       if(character_bounds.x>0){
-                            character_bounds.x -= 4.0;
+                       if(current_char_bounds.x>0){
+                            current_char_bounds.x -= 4.0;
+                            if(walking_status%2&&!JUMPING)
+                            {
+                                current_char_bitmap=character_bitmaps[0];
+
+                            }
+                            else
+                            {
+                                current_char_bitmap=character_bitmaps[1];
+
+                            }
+                            walking_status = (walking_status+1)%2;
+
                        }
                       MESSAGE("Key_left");
 
                    }
 
                    if(key[KEY_RIGHT]) {
-                       if(character_bounds.x<= (al_get_display_width(display)-character_bounds.width))
-                             character_bounds.x += 4.0;
+                       if(current_char_bounds.x<= (al_get_display_width(display)-current_char_bounds.width))
+                       {
+                           current_char_bounds.x += 4.0;
+                           if(walking_status%2&&!JUMPING)
+                           {
+                               current_char_bitmap=character_bitmaps[0];
+
+                           }
+                           else
+                           {
+                               current_char_bitmap=character_bitmaps[1];
+                           }
+                           walking_status = (walking_status+1)%2;
+
+                       }
+
                       MESSAGE("Key_right");
 
                    }
 
-                   if(character_bounds.y<= (al_get_display_height(display)-character_bounds.height)&&!JUMPING){
-                       character_bounds.y += 4.0;
+                   if(!key[KEY_RIGHT]&&!key[KEY_LEFT]&&!key[KEY_UP]&&!key[KEY_DOWN]){
+                       current_char_bitmap=character_bitmaps[2];
                    }
-                   JUMPING=false;
+
+
 
                 redraw = true;
 

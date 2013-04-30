@@ -17,7 +17,7 @@
 //namespace core {
 //namespace client {
 
-const float FPS = 60;
+const float FPS = 15;
 
 enum MYKEYS {
    KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT
@@ -32,13 +32,14 @@ ALLEGRO_BITMAP *play_solo_bitmap,
                *host_game_bitmap,
                *join_game_bitmap,
                *quit_game_bitmap,
-               *character_bitmap;
+               *character_bitmaps[4],
+               *current_char_bitmap;
 
 Rectange play_solo_bounds,
          host_game_bounds,
          join_game_bounds,
          quit_game_bounds,
-         character_bounds;
+         current_char_bounds;
 
 
 ALLEGRO_FONT *default_font;
