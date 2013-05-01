@@ -419,7 +419,7 @@ void render_playing_state()
     if( is_play_setup == false )
     {
         // Load character that we need.
-        ALLEGRO_BITMAP *char_map = al_load_bitmap( "assets/character/character_map.bmp" );
+        ALLEGRO_BITMAP *char_map = al_load_bitmap( "assets/character/cha.bmp" );
         int tile_count = 0;
         ALLEGRO_BITMAP **characters = GameOps.load_sprite_map( char_map, 32, 64, tile_count );
 
