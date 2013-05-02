@@ -47,7 +47,10 @@ void GameMap::generate(){
 
     for(uint32_t i = 0; i < getLength(); i++){
         for(uint32_t j = 0; j < getHeight(); j++){
-            setValue(i, j, 0);
+            if( i == 0 || i == ( getLength() - 1) || j == 0 || j == ( getHeight() - 1 ) )
+                setValue( i, j, 1 );
+            else
+                setValue(i, j, 0);
         }
     }
 
@@ -58,6 +61,8 @@ void GameMap::generate(){
     // seed rand
     // srand(123456);
     // srand(123456);
+
+    srand( time( nullptr ) );
 
     // populate with random platforms
     int n_plats = rand() % 50, plat_len, plat_x, plat_y;

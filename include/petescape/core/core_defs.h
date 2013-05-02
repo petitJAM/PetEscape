@@ -1,8 +1,10 @@
 #ifndef CORE_DEFS_H
 #define CORE_DEFS_H
 
-#define MAP_LENGTH 100
-#define MAP_HEIGHT 40
+//#define MAP_LENGTH 100
+//#define MAP_HEIGHT 40
+#define MAP_LENGTH 25
+#define MAP_HEIGHT 19
 
 #define KEY_UP_INDEX 0
 #define KEY_DOWN_INDEX 1
@@ -41,6 +43,7 @@ typedef struct
 enum GameState
 {
     WelcomeState,
+    SetupState,
     PlayingState,
     PausedState
 };

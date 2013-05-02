@@ -32,10 +32,10 @@ typedef struct CLIENT_USER_INPUT
     time_t event_time;
 } user_input;
 
-typedef struct CLIENT_CLOSE
+typedef struct PADDING_PACKET
 {
     char        padding;
-} client_close;
+} client_close, server_ready;
 
 typedef struct SERVER_INFO
 {
@@ -134,6 +134,7 @@ typedef enum PACKET_ID
     S_INFO,
     S_MAP_HEADER,
     S_MAP_DATA,
+    S_READY,
     O_UPDATE,
     O_INTRODUCE,
     O_DESTORY,
@@ -156,6 +157,7 @@ typedef union PACKET_LIST
     player_move         p_move;
     player_jump         p_jump;
     player_attack       p_attack;
+    server_ready        s_ready;
 } packet_list;
 
 typedef struct NETWORK_PACKET

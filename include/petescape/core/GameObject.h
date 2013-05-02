@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <float.h>
 #include "ObjectRenderer.h"
+#include "BlockMap.h"
 
 namespace petescape {
 namespace core {
@@ -41,11 +42,12 @@ public:
     static GameObject* CreateGameObject( uint32_t );
 
     virtual void render();
+    virtual void update();
     inline const bool isHeadless(){ return m_renderer != nullptr; }
 
     inline void setRenderer( ObjectRenderer *obj ){ this->m_renderer = obj; }
 
-    bool willCollideWith( GameObject const * ) const;
+    void put_in_map( BlockMap *map  ){ this->m_the_map = map; }
 
 protected:
     uint32_t        m_id;
@@ -72,7 +74,20 @@ protected:
     // location updates by itself
     bool    m_use_accel;
     bool    m_use_vel;
+
+    BlockMap *m_the_map;
 };
+
+#define PLAYER_WALK_AMT 8
+#define JUMP_VELOCITY -20
+
+#define IS_ZERO( x ) ( x < 0.001 && x > -0.001 )
+
+#define INTERSECTS( x1,y1,x2,y2,x3,y3,x4,y4 ) \
+    (!( ((x1)>=(x4) || ((x3)>=(x2) || (y1)>=(y4)) || ((y3)>=(y2))) ))
+
+#define CONTAINS( px,py,x1,y1,x2,y2 ) \
+    ( (px>x1) && (px<x2) && (py>y1) && (py<y2) )
 
 class PlayerObject : public GameObject
 {
@@ -81,6 +96,35 @@ class PlayerObject : public GameObject
 public:
     static PlayerObject* CreatePlayer();
     static PlayerObject* CreatePlayer( uint32_t );
+
+    void update();
+
+// Movement Stuff
+    void start_move_left(){ this->m_vx = -PLAYER_WALK_AMT; this->m_facing = 0; }
+    void start_move_right(){ this->m_vx = PLAYER_WALK_AMT; this->m_facing = 1; }
+    void stop_moving(){ this->m_vx = 0; }
+    void start_jump();
+
+// Accessors
+    inline uint8_t get_facing(){ return this->m_facing; }
+    inline uint8_t get_walk_phase(){ return this->m_walk_phase; }
+
+private:
+    /*
+     * 0 = Still
+     * 1 = Phase1
+     * 2 = Phase2
+     * 3 = Jump
+     */
+    uint8_t m_walk_phase;
+
+    /*
+     * 0 = Left
+     * 1 = Right
+     */
+    uint8_t m_facing;
+
+    bool m_is_jumping;
 };
 
 }

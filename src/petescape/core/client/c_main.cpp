@@ -57,7 +57,6 @@ GameState                     game_state;
 
 int                           num_map_packets_recieved;
 char server_ip_address[ 20 ];
-bool accepting_ip_address;
 }
 
 class NetworkOps_
@@ -175,15 +174,22 @@ public:
         {
             GameObject *obj = nullptr;
 
+            MESSAGE( "Creating object." );
+
             switch( data->type )
             {
             case PlayerType:
+                MESSAGE( "Got new player" );
                 obj = PlayerObject::CreatePlayer( data->id );
                 players[ data->id ] = static_cast<PlayerObject*>(obj);
+
+                obj->setRenderer( new petescape::core::PlayerRenderer( character_bitmaps[ data->id ] ) );
+                MESSAGE( "Done with new player" );
             break;
             case OtherType:
                 obj = GameObject::CreateGameObject( data->id );
                 objs[ data->id ] = obj;
+                obj->setRenderer( new petescape::core::PoorRenderer );
             break;
             default:
                 MESSAGE( "Unsupported Type. Defaulting to basic type." );
@@ -194,7 +200,8 @@ public:
 
             obj->setX( data->x );
             obj->setY( data->y );
-            obj->setRenderer( new petescape::core::PoorRenderer );
+
+            obj->put_in_map( block_map );
         }
     }
 
@@ -206,6 +213,9 @@ public:
     void handlePacket( const network_packet *packet )
     {
         packet_list new_packet;
+
+        MESSAGE( "Packet?" );
+        MESSAGE( "Opcode? " << packet->head.opcode );
 
         switch( packet->head.opcode )
         {
@@ -226,6 +236,13 @@ public:
 
             NetOps.async_write(new_packet, C_REQUEST_MAP);
         break;
+
+        case S_READY:
+        {
+            MESSAGE( "READY!" );
+            game_state = PlayingState;
+        }break;
+
         case S_MAP_DATA:
         {
             map->addChunk(packet->data.s_map_data);
@@ -245,16 +262,16 @@ public:
         }
         break;
         case O_INTRODUCE:
-            genObject( &packet->data.o_introduce );
             MESSAGE( "recieved O_INTRODUCE" );
+            genObject( &packet->data.o_introduce );
         break;
         case O_UPDATE:
-            updateObject( &packet->data.o_update );
             MESSAGE( "recieved O_UPDATE" );
+            updateObject( &packet->data.o_update );
         break;
         case O_DESTORY:
-            destroyObject( &packet->data.o_destroy );
             MESSAGE( "recieved O_DESTROY" );
+            destroyObject( &packet->data.o_destroy );
         break;
 
         default:
@@ -318,50 +335,108 @@ namespace {
 GameOps_   GameOps;
 }
 
-void render_welcome_state()
+void load_images()
 {
-    static bool is_setup = false;
+    static bool loaded = false;
 
-    if( is_setup == false )
+    if( loaded )
+        return;
+
+    // Load bitmaps that we need.
+    play_solo_bitmap = al_load_bitmap( "assets/welcome_screen/play_solo.bmp" );
+    host_game_bitmap = al_load_bitmap( "assets/welcome_screen/host_game.bmp" );
+    join_game_bitmap = al_load_bitmap( "assets/welcome_screen/join_game.bmp" );
+    quit_game_bitmap = al_load_bitmap( "assets/welcome_screen/quit_game.bmp" );
+
+    if( !play_solo_bitmap ||
+        !host_game_bitmap ||
+        !join_game_bitmap ||
+        !quit_game_bitmap)
     {
-        // Load bitmaps that we need.
-        play_solo_bitmap = al_load_bitmap( "assets/welcome_screen/play_solo.bmp" );
-        host_game_bitmap = al_load_bitmap( "assets/welcome_screen/host_game.bmp" );
-        join_game_bitmap = al_load_bitmap( "assets/welcome_screen/join_game.bmp" );
-        quit_game_bitmap = al_load_bitmap( "assets/welcome_screen/quit_game.bmp" );
-
-        if( !play_solo_bitmap ||
-            !host_game_bitmap ||
-            !join_game_bitmap ||
-            !quit_game_bitmap)
-        {
-            MESSAGE( "Unable to load bitmaps. Exiting." );
-            exit( 2 );
-        }
-
-        play_solo_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( play_solo_bitmap ) / 2;
-        play_solo_bounds.y = al_get_display_height( display ) / 5 * 1 - al_get_bitmap_height( play_solo_bitmap ) / 2;
-        play_solo_bounds.width = al_get_bitmap_width( play_solo_bitmap );
-        play_solo_bounds.height = al_get_bitmap_height( play_solo_bitmap );
-
-        host_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( host_game_bitmap ) / 2;
-        host_game_bounds.y = al_get_display_height( display ) / 5 * 2 - al_get_bitmap_height( host_game_bitmap ) / 2;
-        host_game_bounds.width = al_get_bitmap_width( host_game_bitmap );
-        host_game_bounds.height = al_get_bitmap_height( host_game_bitmap );
-
-        join_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( join_game_bitmap ) / 2;
-        join_game_bounds.y = al_get_display_height( display ) / 5 * 3 - al_get_bitmap_height( join_game_bitmap ) / 2;
-        join_game_bounds.width = al_get_bitmap_width( join_game_bitmap );
-        join_game_bounds.height = al_get_bitmap_height( join_game_bitmap );
-
-        quit_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( quit_game_bitmap ) / 2;
-        quit_game_bounds.y = al_get_display_height( display ) / 5 * 4 - al_get_bitmap_height( quit_game_bitmap ) / 2;
-        quit_game_bounds.width = al_get_bitmap_width( quit_game_bitmap );
-        quit_game_bounds.height = al_get_bitmap_height( quit_game_bitmap );
-
-        is_setup = true;
+        MESSAGE( "Unable to load welcome screen bitmaps. Exiting." );
+        exit( 2 );
     }
 
+    play_solo_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( play_solo_bitmap ) / 2;
+    play_solo_bounds.y = al_get_display_height( display ) / 5 * 1 - al_get_bitmap_height( play_solo_bitmap ) / 2;
+    play_solo_bounds.width = al_get_bitmap_width( play_solo_bitmap );
+    play_solo_bounds.height = al_get_bitmap_height( play_solo_bitmap );
+
+    host_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( host_game_bitmap ) / 2;
+    host_game_bounds.y = al_get_display_height( display ) / 5 * 2 - al_get_bitmap_height( host_game_bitmap ) / 2;
+    host_game_bounds.width = al_get_bitmap_width( host_game_bitmap );
+    host_game_bounds.height = al_get_bitmap_height( host_game_bitmap );
+
+    join_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( join_game_bitmap ) / 2;
+    join_game_bounds.y = al_get_display_height( display ) / 5 * 3 - al_get_bitmap_height( join_game_bitmap ) / 2;
+    join_game_bounds.width = al_get_bitmap_width( join_game_bitmap );
+    join_game_bounds.height = al_get_bitmap_height( join_game_bitmap );
+
+    quit_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( quit_game_bitmap ) / 2;
+    quit_game_bounds.y = al_get_display_height( display ) / 5 * 4 - al_get_bitmap_height( quit_game_bitmap ) / 2;
+    quit_game_bounds.width = al_get_bitmap_width( quit_game_bitmap );
+    quit_game_bounds.height = al_get_bitmap_height( quit_game_bitmap );
+
+    // Load character that we need.
+    // wtf why did you change the name to cha.bmp... that doesn't even make sense.
+    ALLEGRO_BITMAP *char_map = al_load_bitmap( "assets/character/cha.bmp" );
+    int tile_count = 0;
+    ALLEGRO_BITMAP **characters = GameOps.load_sprite_map( char_map, 32, 64, tile_count );
+
+    if( tile_count != ( 8 * 4 ) )
+    {
+        MESSAGE( "Didn't load correct image count... " << tile_count );
+        exit( 1 );
+    }
+
+    if( characters != nullptr )
+    {
+        for( int i = 0; i < 4; ++i )
+        {
+            for( int j = 0; j < 8; ++j )
+            {
+                character_bitmaps[ i ][ j ] = characters[ i * 8 + j ];
+            }
+
+            current_char_bitmap[ i ] = characters[ i * 8 ];
+            current_char_bounds[ i ].x = 0;
+            current_char_bounds[ i ].y = 0;
+            current_char_bounds[ i ].width = 32;
+            current_char_bounds[ i ].height = 64;
+        }
+    }
+    else
+    {
+        MESSAGE( "Could not load character images..." );
+        exit( 1 );
+    }
+
+    al_destroy_bitmap( char_map );
+
+    loaded = true;
+}
+
+void unload_images()
+{
+    if( character_bitmaps != nullptr )
+    {
+        for( int i = 0; i < 4; ++i )
+        {
+            for( int j = 0; j < 8; ++j )
+            {
+                al_destroy_bitmap( character_bitmaps[ i ][ j ] );
+            }
+        }
+    }
+
+    al_destroy_bitmap( play_solo_bitmap );
+    al_destroy_bitmap( host_game_bitmap );
+    al_destroy_bitmap( join_game_bitmap );
+    al_destroy_bitmap( quit_game_bitmap );
+}
+
+void render_welcome_state()
+{
     al_draw_bitmap( play_solo_bitmap,
                     play_solo_bounds.x,
                     play_solo_bounds.y,
@@ -372,37 +447,10 @@ void render_welcome_state()
                     host_game_bounds.y,
                     0 );
 
-    if( !accepting_ip_address )
-    {
-        al_draw_bitmap( join_game_bitmap,
-                        join_game_bounds.x,
-                        join_game_bounds.y,
-                        0 );
-    }
-    else
-    {
-        al_draw_rectangle( join_game_bounds.x,
-                           join_game_bounds.y,
-                           join_game_bounds.x + join_game_bounds.width,
-                           join_game_bounds.y + join_game_bounds.height,
-                           al_map_rgb( 0, 0, 0 ),
-                           1 );
-
-
-        al_draw_text( default_font,
-                      al_map_rgb( 127, 127, 127 ),
-                      join_game_bounds.x,
-                      join_game_bounds.y,
-                      0,
-                      "Server IP Address:" );
-
-        al_draw_text( default_font,
-                      al_map_rgb( 127, 127, 127 ),
-                      join_game_bounds.x,
-                      join_game_bounds.y + al_get_font_line_height( default_font ),
-                      0,
-                      server_ip_address);
-    }
+    al_draw_bitmap( join_game_bitmap,
+                    join_game_bounds.x,
+                    join_game_bounds.y,
+                    0 );
 
     al_draw_bitmap( quit_game_bitmap,
                     quit_game_bounds.x,
@@ -412,62 +460,18 @@ void render_welcome_state()
 }
 
 void render_playing_state()
-
 {
-    static bool is_play_setup = false;
+    // Render the background.
 
-    if( is_play_setup == false )
+    for( int i = 0; i < block_map->getLength(); ++i )
     {
-        // Load character that we need.
-        ALLEGRO_BITMAP *char_map = al_load_bitmap( "assets/character/cha.bmp" );
-        int tile_count = 0;
-        ALLEGRO_BITMAP **characters = GameOps.load_sprite_map( char_map, 32, 64, tile_count );
-
-        if( tile_count != ( 8 * 4 ) )
+        for( int j = 0; j < block_map->getHeight(); ++j )
         {
-            MESSAGE( "Didn't load correct image count... " << tile_count );
-            exit( 1 );
+            if( block_map->getBlock( i, j ).getBlockType() )
+                al_draw_filled_rectangle( i * 32, j * 32, (i+1) * 32, (j+1) * 32, al_map_rgb( 127,127,127 ) );
+            else
+                al_draw_filled_rectangle( i * 32, j * 32, (i+1) * 32, (j+1) * 32, al_map_rgb( 255,255,255 ) );
         }
-
-        if( characters != nullptr )
-        {
-            for( int i = 0; i < 4; ++i )
-            {
-                for( int j = 0; j < 8; ++j )
-                {
-                    character_bitmaps[ i ][ j ] = characters[ i * 8 + j ];
-                }
-
-                current_char_bitmap[ i ] = characters[ i * 8 ];
-                current_char_bounds[ i ].x = 0;
-                current_char_bounds[ i ].y = 0;
-                current_char_bounds[ i ].width = 32;
-                current_char_bounds[ i ].height = 64;
-            }
-        }
-//        character_bitmaps[client_id][0] = al_load_bitmap( "assets/character/walking0.bmp" );
-//        character_bitmaps[client_id][1] = al_load_bitmap( "assets/character/walking1.bmp" );
-//        character_bitmaps[client_id][2] = al_load_bitmap( "assets/character/still.bmp" );
-//        character_bitmaps[client_id][3] = al_load_bitmap( "assets/character/jump.bmp" );
-
-//        current_char_bitmap[client_id]=character_bitmaps[0];
-
-//        if(!current_char_bitmap||
-//           !character_bitmaps[0]||
-//           !character_bitmaps[1]||
-//           !character_bitmaps[2]||
-//           !character_bitmaps[3])
-//        {
-//            MESSAGE( "Unable to load bitmaps. Exiting." );
-//            exit( 2 );
-//        }
-
-//        current_char_bounds[client_id].x = 0 + al_get_bitmap_width( current_char_bitmap[client_id] ) / 2;
-//        current_char_bounds[client_id].y = al_get_display_height( display ) - al_get_bitmap_height(current_char_bitmap[client_id] );
-//        current_char_bounds[client_id].width = al_get_bitmap_width( current_char_bitmap[client_id] );
-//        current_char_bounds[client_id].height = al_get_bitmap_height( current_char_bitmap[client_id] );
-
-        is_play_setup = true;
     }
 
     // Rendering code goes here
@@ -478,14 +482,8 @@ void render_playing_state()
 
     BOOST_FOREACH( m_element tmp, players )
     {
-        al_draw_bitmap( current_char_bitmap[ ((GameObject*)(tmp.second))->getID() ],
-                        current_char_bounds[ ((GameObject*)(tmp.second))->getID() ].x,
-                        current_char_bounds[ ((GameObject*)(tmp.second))->getID() ].y,
-                        0 );
-//        ((GameObject*)(tmp.second))->render();
+        ((GameObject*)(tmp.second))->render();
     }
-
-//    al_draw_bitmap( current_char_bitmap, current_char_bounds.x,current_char_bounds.y, 0);
 }
 
 void render_pause_state()
@@ -503,6 +501,7 @@ int c_main( int /*argc*/, char **argv )
     client_queue = nullptr;
     display = nullptr;
     timer = nullptr;
+    block_map = nullptr;
     bool key[4] = { false, false, false, false};
     int JUMPIT =1600;
     int jump = JUMPIT;
@@ -512,7 +511,6 @@ int c_main( int /*argc*/, char **argv )
 
     game_state = WelcomeState;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
-    accepting_ip_address = false;
 
     try
     {
@@ -551,7 +549,7 @@ int c_main( int /*argc*/, char **argv )
             return -4;
         }
 
-        if( !( display = al_create_display( 800, 600 ) ) )
+        if( !( display = al_create_display( 800, 608 ) ) )
         {
             MESSAGE( "Error initializing Allegro dispay driver." );
             al_destroy_timer( timer );
@@ -571,6 +569,11 @@ int c_main( int /*argc*/, char **argv )
 
         al_init_image_addon();
         al_init_primitives_addon();
+
+        // Load the images.
+        MESSAGE( "Loading images..." );
+        load_images();
+        MESSAGE( "Loaded imgaes." );
 
         al_register_event_source( client_queue, al_get_display_event_source( display ) );
         al_register_event_source( client_queue, al_get_timer_event_source( timer ) );
@@ -592,6 +595,35 @@ int c_main( int /*argc*/, char **argv )
             {
             case ALLEGRO_EVENT_TIMER: {
 
+                if( game_state == PlayingState )
+                {
+                    if( players[ client_id ] == nullptr )
+                        continue;
+
+                    if( key[ KEY_UP ] )
+                    {
+                        players[ client_id ]->start_jump();
+                    }
+
+                    if( key[ KEY_LEFT ] )
+                    {
+                        players[ client_id ]->start_move_left();
+                    }
+
+                    if( key[ KEY_RIGHT ] )
+                    {
+                        players[ client_id ]->start_move_right();
+                    }
+
+                    if( !key[ KEY_LEFT ] && !key[ KEY_RIGHT ] )
+                    {
+                        players[ client_id ]->stop_moving();
+                    }
+
+                    players[ client_id ]->update();
+                }
+
+            /*
                 if( game_state == PlayingState )
                 {
                     if( jump == JUMPIT )
@@ -717,7 +749,7 @@ int c_main( int /*argc*/, char **argv )
                         current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 0 ];
                     }
                 }
-
+*/
                 redraw = true;
 
             } break;
@@ -782,10 +814,6 @@ int c_main( int /*argc*/, char **argv )
                 x = event.mouse.x;
                 y = event.mouse.y;
 
-                MESSAGE( "location: " << x << ", " << y );
-
-                MESSAGE( "recieving event ALLEGRO_EVENT_MOUSE_BUTTON_DOWN" );
-
                 switch( game_state )
                 {
                 case WelcomeState: {
@@ -815,7 +843,7 @@ int c_main( int /*argc*/, char **argv )
                             NetOps.async_read();
                         }
 
-                        game_state = PlayingState;
+                        game_state = SetupState;
                     }
 
                     // Did they click on the second box?
@@ -846,11 +874,11 @@ int c_main( int /*argc*/, char **argv )
                             NetOps.async_read();
                         }
 
-                        game_state = PlayingState;
+                        game_state = SetupState;
                     }
 
                     // Did they click on the third box?
-                    if( !accepting_ip_address && IS_WITHIN( join_game_bounds, x, y ) )
+                    if( IS_WITHIN( join_game_bounds, x, y ) )
                     {
                         MESSAGE( "CLICKED JOIN GAME" );
 
@@ -868,7 +896,7 @@ int c_main( int /*argc*/, char **argv )
                             MESSAGE( "Nevermind." );
                         }
 
-                        if( socket == nullptr )
+                        if( ( ip != nullptr ) && ( socket == nullptr ) )
                         {
                             boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
                             boost::asio::ip::tcp::resolver::query tcp_query( server_ip_address, "2001" );
@@ -885,9 +913,9 @@ int c_main( int /*argc*/, char **argv )
                             MESSAGE( "sending C_HELLO" );
 
                             NetOps.async_read();
-                        }
 
-                        game_state = PlayingState;
+                            game_state = SetupState;
+                        }
                     }
 
                     // Did they click on the fourth box?
@@ -919,7 +947,9 @@ int c_main( int /*argc*/, char **argv )
                 packet_list padding;
 
                 MESSAGE( "recieving event ALLEGRO_EVENT_DISPLAY_CLOSE" );
-                NetOps.async_write( padding, C_CLOSE );
+
+                if( socket != nullptr )
+                    NetOps.async_write( padding, C_CLOSE );
 
                 should_exit = true;
             } break;
@@ -937,6 +967,9 @@ int c_main( int /*argc*/, char **argv )
                     break;
 
                 case PlayingState:
+                    if( block_map == nullptr )
+                        continue;
+
                     render_playing_state();
                     break;
                 }
@@ -952,6 +985,8 @@ int c_main( int /*argc*/, char **argv )
         launcher->kill();
 
         al_destroy_path(path);
+
+        unload_images();
 
         if( default_font ) al_destroy_font( default_font );
         if( timer )        al_destroy_timer( timer );

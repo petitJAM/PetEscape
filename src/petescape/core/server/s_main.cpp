@@ -237,6 +237,7 @@ public:
             new_packet.s_map_header.stage_height = map_height;
 
             NetworkOps.async_write( packet->head.sender_id, new_packet, S_MAP_HEADER);
+
             MESSAGE( "recieved C_READY, write with S_MAP_HEADER" );
         } break;
 
@@ -255,6 +256,10 @@ public:
 
             NetworkOps.transfer_map( packet->head.sender_id, map );
             MESSAGE( "recieved C_REQUEST_MAP" );
+
+            // tell them that's all they need.
+            NetworkOps.async_write( packet->head.sender_id, new_packet, S_READY );
+
         } break;
 
         case C_BUILD_OBJECTS: {
