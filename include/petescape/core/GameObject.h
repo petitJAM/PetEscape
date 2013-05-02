@@ -79,7 +79,7 @@ protected:
 };
 
 #define PLAYER_WALK_AMT 8
-#define JUMP_VELOCITY -20
+#define JUMP_VELOCITY -25
 
 #define IS_ZERO( x ) ( x < 0.001 && x > -0.001 )
 

@@ -120,7 +120,7 @@ void PlayerObject::update()
     {
         for( uint32_t j = 0; j < m_the_map->getHeight(); ++j )
         {
-            if( m_the_map->getBlock( i, j ).getBlockType() == 1 )
+            if( m_the_map->getBlock( i, j ).getBlockType() != 0 )
             {
                 if( CONTAINS( new_x1, m_y           , i*32, j*32, i*32+32, j*32+32 ) ) goto end_col_check_x;
                 if( CONTAINS( new_x1, m_y + 21      , i*32, j*32, i*32+32, j*32+32 ) ) goto end_col_check_x;
@@ -144,7 +144,7 @@ end_col_check_x:
     {
         for( uint32_t j = 0; j < m_the_map->getHeight(); ++j )
         {
-            if( m_the_map->getBlock( i, j ).getBlockType() == 1 )
+            if( m_the_map->getBlock( i, j ).getBlockType() != 0 )
             {
                 if( CONTAINS( m_x            , new_y1, i*32, j*32, i*32+32, j*32+32 ) ) goto end_col_check_y;
                 if( CONTAINS( m_x            , new_y2, i*32, j*32, i*32+32, j*32+32 ) ) goto end_col_check_y;

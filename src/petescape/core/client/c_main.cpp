@@ -423,6 +423,21 @@ void load_images()
 
     al_destroy_bitmap( char_map );
 
+    // Load the tileset.
+    ALLEGRO_BITMAP *tile_map = al_load_bitmap( "assets/tiles.bmp" );
+    tile_count = 0;
+
+    ALLEGRO_BITMAP **temp_tiles = GameOps.load_sprite_map( tile_map, 32, 32, tile_count );
+
+    for( int i = 0; i < 25; ++i )
+        tiles[ i ] = temp_tiles[ i ];
+
+    if( tiles == nullptr )
+    {
+        MESSAGE( "ERROR LOADING TILES" );
+        exit( -2 );
+    }
+
     loaded = true;
 }
 
@@ -437,6 +452,11 @@ void unload_images()
                 al_destroy_bitmap( character_bitmaps[ i ][ j ] );
             }
         }
+    }
+
+    for( int i = 0; i < 25; ++i )
+    {
+        al_destroy_bitmap( tiles[ i ] );
     }
 
     al_destroy_bitmap( play_solo_bitmap );
@@ -473,14 +493,18 @@ void render_playing_state()
 {
     // Render the background.
 
+    al_clear_to_color( al_map_rgb( 105, 230, 255 ) );
+
     for( int i = 0; i < block_map->getLength(); ++i )
     {
         for( int j = 0; j < block_map->getHeight(); ++j )
         {
             if( block_map->getBlock( i, j ).getBlockType() )
-                al_draw_filled_rectangle( i * 32, j * 32, (i+1) * 32, (j+1) * 32, al_map_rgb( 127,127,127 ) );
-            else
-                al_draw_filled_rectangle( i * 32, j * 32, (i+1) * 32, (j+1) * 32, al_map_rgb( 255,255,255 ) );
+                al_draw_bitmap( tiles[ block_map->getBlock( i, j ).getBlockType() - 1 ], i * 32, j * 32, 0 );
+
+//                al_draw_filled_rectangle( i * 32, j * 32, (i+1) * 32, (j+1) * 32, al_map_rgb( 127,127,127 ) );
+//            else
+//                al_draw_filled_rectangle( i * 32, j * 32, (i+1) * 32, (j+1) * 32, al_map_rgb( 255,255,255 ) );
         }
     }
 

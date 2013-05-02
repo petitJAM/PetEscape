@@ -44,6 +44,8 @@ ALLEGRO_BITMAP *play_solo_bitmap,
                *character_bitmaps[4][8],
                *current_char_bitmap[4];
 
+ALLEGRO_BITMAP *tiles[25];
+
 Rectange play_solo_bounds,
          host_game_bounds,
          join_game_bounds,

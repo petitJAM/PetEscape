@@ -45,19 +45,30 @@ void GameMap::generate(){
         return;
     }
 
-    for(uint32_t i = 0; i < getLength(); i++){
-        for(uint32_t j = 0; j < getHeight(); j++){
-            // I added this to generate walls and a floor for collision testing.
-            if( i == 0 || i == ( getLength() - 1) || j == 0 || j == ( getHeight() - 1 ) )
-                setValue( i, j, 1 );
+    for(uint32_t i = 0; i < getLength(); i++)
+    {
+        for(uint32_t j = 0; j < getHeight(); j++)
+        {
+            if( j == getHeight() - 2 )
+                setValue( i, j, 2 );
+
+            else if( j == getHeight() - 1 )
+                setValue( i, j, 7 );
+
             else
-                setValue(i, j, 0);
+                setValue( i, j, 0 );
+
+            // I added this to generate walls and a floor for collision testing.
+//            if( i == 0 || i == ( getLength() - 1) || j == 0 || j == ( getHeight() - 1 ) )
+//                setValue( i, j, 1 );
+//            else
+//                setValue(i, j, 0);
         }
     }
 
-    for(uint32_t i = 0; i < getLength(); i++){
-        setValue(i, getHeight() - 1, 1);
-    }
+//    for(uint32_t i = 0; i < getLength(); i++){
+//        setValue(i, getHeight() - 1, 1);
+//    }
 
     // seed rand
     // srand(123456);
@@ -67,19 +78,19 @@ void GameMap::generate(){
     srand( time( nullptr ) );
 
     // populate with random platforms
-    int n_plats = rand() % 50, plat_len, plat_x, plat_y;
+    int n_plats = rand() % 25, plat_len, plat_x, plat_y;
 
     if (m_length > 10)
     {
         for (int i = 0; i<n_plats; i++)
         {
             plat_len = rand() % 5;
-            plat_x = (rand() % (m_length - 10)) + 5; // how far over
+            plat_x = (rand() % (m_length/* - 10*/))/* + 5*/; // how far over
             plat_y = (rand() % (m_height - 5)) + 1; // how far up
 
             for (int j = 0; j<plat_len; j++)
             {
-                setValue(plat_x + j, plat_y, 1);
+                setValue(plat_x + j, plat_y, 2);
             }
         }
     }
