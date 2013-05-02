@@ -290,6 +290,34 @@ public:
             MESSAGE( "recieved C_BUILD_OBJECTS, write with O_INTRODUCE" );
         } break;
 
+        case O_UPDATE: {
+
+            switch( packet->data.o_update.type )
+            {
+            case PlayerType:
+                players[ packet->head.sender_id ]->setX( packet->data.o_update.x );
+                players[ packet->head.sender_id ]->setY( packet->data.o_update.y );
+                players[ packet->head.sender_id ]->set_facing( packet->data.o_update.facing );
+
+                BOOST_FOREACH( map_element i, players )
+                {
+                    if( ((PlayerObject*)(i.second))->getID() == packet->head.sender_id )
+                        continue;
+
+                    new_packet.o_update.id   = packet->data.o_update.id;
+                    new_packet.o_update.type = (uint16_t)PlayerType;
+                    new_packet.o_update.x    = packet->data.o_update.x;
+                    new_packet.o_update.y    = packet->data.o_update.y;
+                    new_packet.o_update.facing = packet->data.o_update.facing;
+
+                    NetworkOps.async_write( ((PlayerObject*)(i.second))->getID(), new_packet, O_UPDATE );
+                }
+
+                break;
+            }
+
+        } break;
+
         case C_USER_INPUT: {
             //time of the event
             time_t event_time = packet->data.c_user_input.event_time;

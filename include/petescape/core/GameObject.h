@@ -109,6 +109,9 @@ public:
     inline uint8_t get_facing(){ return this->m_facing; }
     inline uint8_t get_walk_phase(){ return this->m_walk_phase; }
 
+// Mutators
+    inline void set_facing( uint8_t facing ){ this->m_facing = facing; }
+
 private:
     /*
      * 0 = Still

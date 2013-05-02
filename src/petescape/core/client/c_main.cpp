@@ -157,10 +157,20 @@ public:
 
     void updateObject( const update_obj *data )
     {
-        if( objs.count( data->id ) == 1 )
+        switch( data->type )
         {
-            objs[data->id]->setX( data->x );
-            objs[data->id]->setY( data->y );
+        case PlayerType:
+            players[ data->id ]->setX( data->x );
+            players[ data->id ]->setY( data->y );
+            players[ data->id ]->set_facing( data->facing );
+        break;
+        case OtherType:
+            objs[ data->id ]->setX( data->x );
+            objs[ data->id ]->setY( data->y );
+        break;
+        default:
+            MESSAGE( "Unsupported Type. Defaulting to basic type." );
+        break;
         }
     }
 
@@ -503,11 +513,6 @@ int c_main( int /*argc*/, char **argv )
     timer = nullptr;
     block_map = nullptr;
     bool key[4] = { false, false, false, false};
-    int JUMPIT =1600;
-    int jump = JUMPIT;
-    bool JUMPING = false;
-    int walking_status = 0;
-    int dy =0;// TODO:velocity in y change later
 
     game_state = WelcomeState;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
@@ -595,6 +600,8 @@ int c_main( int /*argc*/, char **argv )
             {
             case ALLEGRO_EVENT_TIMER: {
 
+                static uint64_t counter = 0;
+
                 if( game_state == PlayingState )
                 {
                     if( players[ client_id ] == nullptr )
@@ -621,135 +628,22 @@ int c_main( int /*argc*/, char **argv )
                     }
 
                     players[ client_id ]->update();
+                    ++counter;
+
+//                    if( counter % 4 == 0 )
+//                    {
+                    // For now throw a packet out every frame. Not laggy at all.
+                    packet_list packet;
+                    packet.o_update.id = client_id;
+                    packet.o_update.type = PlayerType;
+                    packet.o_update.facing = players[ client_id ]->get_facing();
+                    packet.o_update.x = (uint32_t)( players[ client_id ]->getX() );
+                    packet.o_update.y = (uint32_t)( players[ client_id ]->getY() );
+
+                    NetOps.async_write( packet, O_UPDATE );
+//                    }
                 }
 
-            /*
-                if( game_state == PlayingState )
-                {
-                    if( jump == JUMPIT )
-                    {
-                        if( current_char_bounds[ client_id ].y >= ( al_get_display_height( display ) - current_char_bounds[ client_id ].height ) )//TODO: change!  on base
-                        {
-                            MESSAGE("collide");
-                            jump = 0;
-                        }
-                        if( key[ KEY_UP ] )
-                        {
-                            // TODO: This should be 3 OR 7...
-                            current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 3 ];
-                            jump = JumpInitVelocity;
-                            JUMPING = true;
-                        }
-                    }
-                    else
-                    {
-                        // TODO: Again, should be 3 or 7 by facing.
-                        current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 3 ];
-                        current_char_bounds[ client_id ].y -= jump / 3;
-                        jump -= 6;
-                    }
-
-                    if( jump < 0 )
-                    {
-
-                        if( current_char_bounds[ client_id ].y >= ( al_get_display_height( display ) - current_char_bounds[ client_id ].height ) )
-                        {
-                            jump = JUMPIT;
-                            JUMPING = false;
-                            MESSAGE( "collide ");
-
-                            while( current_char_bounds[ client_id ].y > ( al_get_display_height( display ) - current_char_bounds[ client_id ].height ) )
-                            {
-                                current_char_bounds[ client_id ].y -= 2;
-                            }
-                        }
-
-                    }
-
-//                   if(key[KEY_UP]) {
-//                       ROCKET:
-//                       if(current_char_bounds.y>=0)
-//                       {
-//                           current_char_bitmap=character_bitmaps[3];
-//                           JUMPING=true;
-//                           current_char_bounds.y -= 4.0;
-//                       }
-//                      MESSAGE("Key_up");
-//                   }
-
-                    if( key[ KEY_DOWN ] )
-                    {
-                        // Down doesn't do anything... this can be removed.
-                        if( current_char_bounds[ client_id ].y <= ( al_get_display_height( display ) - current_char_bounds[ client_id ].height ) )
-                        {
-                            current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 3 ];
-                            current_char_bounds[ client_id ].y += MovementSpeed;
-
-                        }
-//                       current_char_bounds.y += 4.0;
-
-                       MESSAGE("Key_down");
-
-                    }
-
-                    if( key[ KEY_LEFT ] )
-                    {
-                        if( current_char_bounds[ client_id ].x > 0 )
-                        {
-                            current_char_bounds[ client_id ].x -= MovementSpeed;
-
-                            if( !JUMPING )
-                            {
-                                if( walking_status % 2 )
-                                {
-                                    current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 1 ];
-
-                                }
-                                else
-                                {
-                                    current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 2 ];
-
-                                }
-
-                                walking_status = ( walking_status + 1 ) % 2;
-                            }
-                        }
-
-                        MESSAGE("Key_left");
-                    }
-
-                    if( key[ KEY_RIGHT ] )
-                    {
-                        if( current_char_bounds[ client_id ].x <= ( al_get_display_width( display ) - current_char_bounds[ client_id ].width ) )
-                        {
-                            current_char_bounds[ client_id ].x += MovementSpeed;
-
-                            if( !JUMPING )
-                            {
-                                if( walking_status % 2 )
-                                {
-                                    current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 5 ];
-                                }
-                                else
-                                {
-                                    current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 6 ];
-                                }
-
-                                walking_status = ( walking_status + 1 ) % 2;
-                            }
-                        }
-
-                        MESSAGE("Key_right");
-
-                    }
-
-                    if( !key[ KEY_RIGHT ] && !key[ KEY_LEFT ] && !key[ KEY_UP ] && !key[ KEY_DOWN ] )
-                    {
-                        // Or 4, depending on facing.
-                        current_char_bitmap[ client_id ] = character_bitmaps[ client_id ][ 0 ];
-                    }
-                }
-*/
                 redraw = true;
 
             } break;

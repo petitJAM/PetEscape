@@ -47,6 +47,7 @@ void GameMap::generate(){
 
     for(uint32_t i = 0; i < getLength(); i++){
         for(uint32_t j = 0; j < getHeight(); j++){
+            // I added this to generate walls and a floor for collision testing.
             if( i == 0 || i == ( getLength() - 1) || j == 0 || j == ( getHeight() - 1 ) )
                 setValue( i, j, 1 );
             else
@@ -62,6 +63,7 @@ void GameMap::generate(){
     // srand(123456);
     // srand(123456);
 
+    // Seed with the current time.
     srand( time( nullptr ) );
 
     // populate with random platforms
