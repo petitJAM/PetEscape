@@ -526,7 +526,7 @@ int s_main( int /*argc*/, char ** /*argv*/ )
             break;
 
             case NETWORK_RECV:
-                MESSAGE( "recieving event NETWORK_RECV" );
+                // MESSAGE( "recieving event NETWORK_RECV" );
 
                 // Do something based off what kind of packet it is.
                 ServerOps.handlePacket( (network_packet *)event.user.data1 );
