@@ -115,9 +115,9 @@ public:
 private:
     /*
      * 0 = Still
-     * 1 = Phase1
-     * 2 = Phase2
-     * 3 = Jump
+     * 1 = "Injured"
+     * 2 = "Attacking"
+     * 3-14 = Walking
      */
     uint8_t m_walk_phase;
 

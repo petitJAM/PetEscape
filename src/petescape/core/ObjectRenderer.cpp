@@ -18,7 +18,7 @@ void PoorRenderer::render( GameObject* obj )
 
 PlayerRenderer::PlayerRenderer( ALLEGRO_BITMAP *images[] )
 {
-    for( int i = 0; i < 8; ++i )
+    for( int i = 0; i < 30; ++i )
         this->m_sprites[ i ] = images[ i ];
 }
 
@@ -28,8 +28,31 @@ void PlayerRenderer::render( GameObject* obj )
 
     if( player != nullptr )
     {
-        uint8_t index = player->get_walk_phase();
-        index += player->get_facing() ? 4 : 0;
+        uint8_t index = 0;
+        uint8_t phase = player->get_walk_phase();
+
+        if( player->get_facing() == 1 )
+        {
+            if( phase == 0 )
+                index = 0;
+            else if( phase == 1 )
+                index = 2;
+            else if( phase == 2 )
+                index = 4;
+            else
+                index = 6 + phase - 3;
+        }
+        else
+        {
+            if( phase == 0 )
+                index = 1;
+            else if( phase == 1 )
+                index = 3;
+            else if( phase == 2 )
+                index = 5;
+            else
+                index = 29 - ( phase - 3 );
+        }
 
         if( m_sprites[ index ] == nullptr )
         {
