@@ -65,6 +65,7 @@ typedef struct UPDATE_OBJ
     uint16_t    type;
     uint8_t     action;
     uint8_t     facing;
+    uint8_t     walk_phase;
 } update_obj, introduce_obj;
 
 typedef struct DESTROY_OBJ

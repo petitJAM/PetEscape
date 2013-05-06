@@ -298,6 +298,7 @@ public:
                 players[ packet->head.sender_id ]->setX( packet->data.o_update.x );
                 players[ packet->head.sender_id ]->setY( packet->data.o_update.y );
                 players[ packet->head.sender_id ]->set_facing( packet->data.o_update.facing );
+                players[ packet->head.sender_id ]->set_walk_phase( packet->data.o_update.walk_phase );
 
                 BOOST_FOREACH( map_element i, players )
                 {
@@ -309,6 +310,7 @@ public:
                     new_packet.o_update.x    = packet->data.o_update.x;
                     new_packet.o_update.y    = packet->data.o_update.y;
                     new_packet.o_update.facing = packet->data.o_update.facing;
+                    new_packet.o_update.walk_phase = packet->data.o_update.walk_phase;
 
                     NetworkOps.async_write( ((PlayerObject*)(i.second))->getID(), new_packet, O_UPDATE );
                 }

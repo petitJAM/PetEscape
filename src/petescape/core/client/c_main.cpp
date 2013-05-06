@@ -163,6 +163,7 @@ public:
             players[ data->id ]->setX( data->x );
             players[ data->id ]->setY( data->y );
             players[ data->id ]->set_facing( data->facing );
+            players[ data->id ]->set_walk_phase( data->walk_phase );
         break;
         case OtherType:
             objs[ data->id ]->setX( data->x );
@@ -669,6 +670,7 @@ int c_main( int /*argc*/, char **argv )
                     packet.o_update.id = client_id;
                     packet.o_update.type = PlayerType;
                     packet.o_update.facing = players[ client_id ]->get_facing();
+                    packet.o_update.walk_phase = players[ client_id ]->get_walk_phase();
                     packet.o_update.x = (uint32_t)( players[ client_id ]->getX() );
                     packet.o_update.y = (uint32_t)( players[ client_id ]->getY() );
 

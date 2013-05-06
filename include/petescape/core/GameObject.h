@@ -111,6 +111,7 @@ public:
 
 // Mutators
     inline void set_facing( uint8_t facing ){ this->m_facing = facing; }
+    inline void set_walk_phase( uint8_t walk_phase ){ this->m_walk_phase = walk_phase; }
 
 private:
     /*
