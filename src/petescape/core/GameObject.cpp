@@ -187,9 +187,9 @@ end_col_check_y:
     }
 
     if( this->m_is_jumping )
-        this->m_walk_phase = 3;
+        this->m_walk_phase = 4;
     else if( !IS_ZERO( this->m_vx ) )
-        this->m_walk_phase = ( this->m_walk_phase % 2 ) + 1;
+        this->m_walk_phase = ( this->m_walk_phase + 1 ) % 12 + 3;
     else
         this->m_walk_phase = 0;
 }

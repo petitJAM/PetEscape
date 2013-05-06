@@ -23,7 +23,7 @@ enum MYKEYS {
 
 typedef struct
 {
-    ALLEGRO_BITMAP *character_bitmaps[4][8];
+    ALLEGRO_BITMAP *character_bitmaps[4][30];
     ALLEGRO_BITMAP *current_char_bitmap[4];
     Rectange current_char_bounds[4];
     int32_t health;
@@ -41,7 +41,7 @@ ALLEGRO_BITMAP *play_solo_bitmap,
                *host_game_bitmap,
                *join_game_bitmap,
                *quit_game_bitmap,
-               *character_bitmaps[4][8],
+               *character_bitmaps[4][30],
                *current_char_bitmap[4];
 
 ALLEGRO_BITMAP *tiles[25];
