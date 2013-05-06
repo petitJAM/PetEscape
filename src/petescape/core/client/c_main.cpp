@@ -389,11 +389,19 @@ void load_images()
 
     // Load character that we need.
     // wtf why did you change the name to cha.bmp... that doesn't even make sense.
-    ALLEGRO_BITMAP *char_map = al_load_bitmap( "assets/character/cha.bmp" );
+    // lol =w = i change it to character happy? :)
+    ALLEGRO_BITMAP *char_map = al_load_bitmap( "assets/character/character.bmp" );
+    al_convert_mask_to_alpha(char_map,al_map_rgb(255,255,255));
+
+    if (char_map == nullptr){
+        MESSAGE( "Could not load character images..." );
+        exit( 1 );
+    }
+
     int tile_count = 0;
     ALLEGRO_BITMAP **characters = GameOps.load_sprite_map( char_map, 32, 64, tile_count );
 
-    if( tile_count != ( 8 * 4 ) )
+    if( tile_count != ( 30 * 4 ) )
     {
         MESSAGE( "Didn't load correct image count... " << tile_count );
         exit( 1 );
@@ -403,12 +411,12 @@ void load_images()
     {
         for( int i = 0; i < 4; ++i )
         {
-            for( int j = 0; j < 8; ++j )
+            for( int j = 0; j < 30; ++j )
             {
-                character_bitmaps[ i ][ j ] = characters[ i * 8 + j ];
+                character_bitmaps[ i ][ j ] = characters[ i * 30 + j ];
             }
 
-            current_char_bitmap[ i ] = characters[ i * 8 ];
+            current_char_bitmap[ i ] = characters[ i * 30 ];
             current_char_bounds[ i ].x = 0;
             current_char_bounds[ i ].y = 0;
             current_char_bounds[ i ].width = 32;
@@ -447,7 +455,7 @@ void unload_images()
     {
         for( int i = 0; i < 4; ++i )
         {
-            for( int j = 0; j < 8; ++j )
+            for( int j = 0; j < 30; ++j )
             {
                 al_destroy_bitmap( character_bitmaps[ i ][ j ] );
             }
