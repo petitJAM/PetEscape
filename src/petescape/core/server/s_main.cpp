@@ -77,21 +77,18 @@ public:
     {
         if( sockets[ client_id ]->is_open() )
         {
-            MESSAGE( "writing packet." );
-            MESSAGE( map->getSize() );
+            MESSAGE( "SERVER: Sending map to client " << client_id );
             unsigned int packet_number = 0;
 
-            for( int i = 0; i < map->getSize(); i+=MAP_PACKET_SIZE )
+            for( int i = 0; i < map->getSize(); i += MAP_PACKET_SIZE )
             {
-    //        while(packet_number * MAP_PACKET_SIZE < map->getSize()){
                 packet_list new_packet;
-                new_packet.s_map_data.packet_number = i/MAP_PACKET_SIZE;
+                new_packet.s_map_data.packet_number = i / MAP_PACKET_SIZE;
 
-                map->populateChunk(new_packet.s_map_data);
+                map->populateChunk( new_packet.s_map_data );
 
+                MESSAGE( "SERVER: Sending S_MAP_DATA [Index: " << (packet_number++) << "]" );
                 async_write(client_id, new_packet, S_MAP_DATA);
-                MESSAGE( "writing S_MAP_DATA " << (packet_number + 1));
-                packet_number++;
             }
         }
         else
@@ -193,29 +190,30 @@ public:
         switch( packet->head.opcode )
         {
         case C_HELLO: {
+            MESSAGE( "SERVER: Recieved C_HELLO" );
             PlayerObject *player = PlayerObject::CreatePlayer();
             players[ player->getID() ] = player;
 
             new_packet.s_info.client_id = player->getID();
 
             // Tell the client its ID
-            NetworkOps.async_write( player->getID(), new_packet, S_INFO );
-            MESSAGE( "recieved C_HELLO, write with S_INFO" );
+            MESSAGE( "SERVER: Sending S_INFO" );
+            NetworkOps.async_write( player->getID(), new_packet, S_INFO );;
 
-            // Tell the other connections about the new player.
-            for( int i = 0; i < MAX_CONNECTIONS; ++i )
-            {
-                if( ( i != player->getID() ) && ( sockets[ i ] != nullptr ) )
-                {
-                    packet_list new_packet;
-                    new_packet.o_introduce.id   = player->getID();
-                    new_packet.o_introduce.type = (uint16_t)PlayerType;
-                    new_packet.o_introduce.x    = (uint32_t)player->getX();
-                    new_packet.o_introduce.y    = (uint32_t)player->getY();
+//            // Tell the other connections about the new player.
+//            for( int i = 0; i < MAX_CONNECTIONS; ++i )
+//            {
+//                if( ( i != player->getID() ) && ( sockets[ i ] != nullptr ) )
+//                {
+//                    packet_list new_packet;
+//                    new_packet.o_update.id   = player->getID();
+//                    new_packet.o_update.type = (uint16_t)PlayerType;
+//                    new_packet.o_update.x    = (uint32_t)player->getX();
+//                    new_packet.o_update.y    = (uint32_t)player->getY();
 
-                    NetworkOps.async_write( i, new_packet, O_INTRODUCE );
-                }
-            }
+//                    NetworkOps.async_write( i, new_packet, O_UPDATE );
+//                }
+//            }
         }break;
 
         case C_CLOSE: {
@@ -229,68 +227,71 @@ public:
             al_emit_user_event( &network_event_source, &event, nullptr );
         } break;
 
-        case C_READY: {
-            // Send the client anything that it needs. In this case, a map header.
-            map_length = MAP_LENGTH;
-            map_height = MAP_HEIGHT;
+        case C_REQUEST_MAP: {
+            MESSAGE( "SERVER: Recieved C_REQUEST_MAP" );
+
+            if( map == nullptr )
+            {
+                map_length = MAP_LENGTH;
+                map_height = MAP_HEIGHT;
+                map = new GameMap( map_height, map_length );
+                map->generate();
+            }
+
             new_packet.s_map_header.stage_length = map_length;
             new_packet.s_map_header.stage_height = map_height;
 
-            NetworkOps.async_write( packet->head.sender_id, new_packet, S_MAP_HEADER);
+            MESSAGE( "SERVER: Sending S_MAP_HEADER" );
+            NetworkOps.async_write( packet->head.sender_id, new_packet, S_MAP_HEADER );
 
-            MESSAGE( "recieved C_READY, write with S_MAP_HEADER" );
-        } break;
+            al_rest( 1 );
 
-        case C_REQUEST_MAP: {
-            //Begin sending the client a stream of map information.
-            if( map == nullptr )
-            {
-                map = new GameMap(map_height, map_length);
-
-                // Init Map Data
-                map->generate();
-
-                // take a peek
-                //map->display();
-            }
-
+            MESSAGE( "SERVER: Sending map to " << (int)packet->head.sender_id );
             NetworkOps.transfer_map( packet->head.sender_id, map );
-            MESSAGE( "recieved C_REQUEST_MAP" );
 
-            // tell them that's all they need.
-            NetworkOps.async_write( packet->head.sender_id, new_packet, S_READY );
+            al_rest( 1 );
 
+            MESSAGE( "SERVER: Sending S_SENT_MAP" );
+            NetworkOps.async_write( packet->head.sender_id, new_packet, S_SENT_MAP );
         } break;
 
-        case C_BUILD_OBJECTS: {
-            int count = 0;
+        case C_REQUEST_OBJS:
+        {
+            MESSAGE( "SERVER: Recieved C_REQUEST_OBJS" );
+
             // Write Each player
             BOOST_FOREACH( map_element i, players )
             {
-                new_packet.o_introduce.id   = ((PlayerObject*)(i.second))->getID();
-                new_packet.o_introduce.type = (uint16_t)PlayerType;
-                new_packet.o_introduce.x    = (uint32_t)((PlayerObject*)(i.second))->getX();
-                new_packet.o_introduce.y    = (uint32_t)((PlayerObject*)(i.second))->getY();
+                new_packet.o_update.id   = ((PlayerObject*)(i.second))->getID();
+                new_packet.o_update.type = (uint16_t)PlayerType;
+                new_packet.o_update.x    = (uint32_t)((PlayerObject*)(i.second))->getX();
+                new_packet.o_update.y    = (uint32_t)((PlayerObject*)(i.second))->getY();
 
-                NetworkOps.async_write( packet->head.sender_id, new_packet, O_INTRODUCE );
-                ++count;
+                MESSAGE( "SERVER: Sending O_UPDATE" );
+                NetworkOps.async_write( packet->head.sender_id, new_packet, O_UPDATE );
             }
 
+            // Write other objects.
             BOOST_FOREACH( map_element i, objs )
             {
-                new_packet.o_introduce.id   = ((GameObject*)(i.second))->getID();
-                new_packet.o_introduce.type = (uint16_t)OtherType;
-                new_packet.o_introduce.x    = (uint32_t)((GameObject*)(i.second))->getX();
-                new_packet.o_introduce.y    = (uint32_t)((GameObject*)(i.second))->getY();
+                new_packet.o_update.id   = ((GameObject*)(i.second))->getID();
+                new_packet.o_update.type = (uint16_t)OtherType;
+                new_packet.o_update.x    = (uint32_t)((GameObject*)(i.second))->getX();
+                new_packet.o_update.y    = (uint32_t)((GameObject*)(i.second))->getY();
 
-                NetworkOps.async_write( packet->head.sender_id, new_packet, O_INTRODUCE );
-                ++count;
+                MESSAGE( "SERVER: Sending O_UPDATE" );
+                NetworkOps.async_write( packet->head.sender_id, new_packet, O_UPDATE );
             }
-            MESSAGE( "Wrote " << count << " objects." );
-            MESSAGE( "recieved C_BUILD_OBJECTS, write with O_INTRODUCE" );
+
+            al_rest( 1 );
+
+            MESSAGE( "SERVER: Sending S_SENT_OBJS" );
+            NetworkOps.async_write( packet->head.sender_id, new_packet, S_SENT_OBJS );
         } break;
 
-        case O_UPDATE: {
+        case O_UPDATE:
+        {
+//            MESSAGE( "SERVER: Recieved O_UPDATE" );
 
             switch( packet->data.o_update.type )
             {
@@ -320,6 +321,7 @@ public:
 
         } break;
 
+/*
         case C_USER_INPUT: {
             //time of the event
             time_t event_time = packet->data.c_user_input.event_time;
@@ -386,10 +388,10 @@ public:
             }break;
             }
         } break;
-
+*/
         default: {
             // Do nothing.
-            MESSAGE( "Do nothing." );
+            MESSAGE( "SERVER: Do nothing - unexpected packet_id" );
         } break;
         }
     }
