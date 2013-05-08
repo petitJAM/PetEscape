@@ -115,10 +115,10 @@ public:
 
 private:
     /*
-     * 0 = Still
-     * 1 = "Injured"
-     * 2 = "Attacking"
-     * 3-14 = Walking
+     * 0-11 = Walking
+     * 12   = Still
+     * 13   = Injured
+     * 14   = Attacking
      */
     uint8_t m_walk_phase;
 
