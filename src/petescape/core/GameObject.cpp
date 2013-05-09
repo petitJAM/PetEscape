@@ -109,8 +109,8 @@ void PlayerObject::update()
     float new_x2 = m_x + m_vx + m_ax + m_width / 2;
     float new_x3 = m_x + m_vx + m_ax + m_width;
     float new_y1 = m_y + m_vy + m_ay;
-    float new_y2 = m_y + m_vy + m_ay + 21; // ~ height / 3
-    float new_y3 = m_y + m_vy + m_ay + 42; // ~ 2*height / 3
+    float new_y2 = m_y + m_vy + m_ay + 20; // ~ height / 3
+    float new_y3 = m_y + m_vy + m_ay + 40; // ~ 2*height / 3
     float new_y4 = m_y + m_vy + m_ay + m_height;
 
     bool x_collision = true;
@@ -123,8 +123,8 @@ void PlayerObject::update()
             if( m_the_map->getBlock( i, j ).getBlockType() != 0 )
             {
                 if( CONTAINS( new_x1, m_y           , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x1, m_y + 21      , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x1, m_y + 42      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x1, m_y + 20      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x1, m_y + 40      , i*32, j*32, i*32+32, j*32+32 ) ||
                     CONTAINS( new_x1, m_y + m_height, i*32, j*32, i*32+32, j*32+32 ) )
                 {
                     m_x = i * 32 + 32;
@@ -132,8 +132,8 @@ void PlayerObject::update()
                 }
 
                 if( CONTAINS( new_x2, m_y           , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x2, m_y + 21      , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x2, m_y + 42      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x2, m_y + 20      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x2, m_y + 40      , i*32, j*32, i*32+32, j*32+32 ) ||
                     CONTAINS( new_x2, m_y + m_height, i*32, j*32, i*32+32, j*32+32 ) )
                 {
                     m_x = i * 32 + 16;
@@ -141,8 +141,8 @@ void PlayerObject::update()
                 }
 
                 if( CONTAINS( new_x3, m_y           , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x3, m_y + 21      , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x3, m_y + 42      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x3, m_y + 20      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x3, m_y + 40      , i*32, j*32, i*32+32, j*32+32 ) ||
                     CONTAINS( new_x3, m_y + m_height, i*32, j*32, i*32+32, j*32+32 ) )
                 {
                     m_x = i * 32 - 32;
@@ -160,20 +160,12 @@ end_col_check_x:
         {
             if( m_the_map->getBlock( i, j ).getBlockType() != 0 )
             {
-                // Top of character colides with something.
-                if( CONTAINS( m_x            , new_y1, i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( m_x + m_width/2, new_y1, i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( m_x + m_width  , new_y1, i*32, j*32, i*32+32, j*32+32 ) )
+                if( CONTAINS( m_x            , new_y4, i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( m_x + m_width/2, new_y4, i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( m_x + m_width  , new_y4, i*32, j*32, i*32+32, j*32+32 ) )
                 {
-                    // Assume that we're moving up.
-                    m_y = j * 32 + 32;
-                    goto end_col_check_y;
-                }
-
-                if( CONTAINS( m_x            , new_y2, i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( m_x + m_width/2, new_y2, i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( m_x + m_width  , new_y2, i*32, j*32, i*32+32, j*32+32 ) )
-                {
+                    m_y = j * 32 - m_height;
+                    m_is_jumping = false;
                     goto end_col_check_y;
                 }
 
@@ -184,12 +176,20 @@ end_col_check_x:
                     goto end_col_check_y;
                 }
 
-                if( CONTAINS( m_x            , new_y4, i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( m_x + m_width/2, new_y4, i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( m_x + m_width  , new_y4, i*32, j*32, i*32+32, j*32+32 ) )
+                if( CONTAINS( m_x            , new_y2, i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( m_x + m_width/2, new_y2, i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( m_x + m_width  , new_y2, i*32, j*32, i*32+32, j*32+32 ) )
                 {
-                    m_y = j * 32 - 32 * 2;
-                    m_is_jumping = false;
+                    goto end_col_check_y;
+                }
+
+                // Top of character colides with something.
+                if( CONTAINS( m_x            , new_y1, i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( m_x + m_width/2, new_y1, i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( m_x + m_width  , new_y1, i*32, j*32, i*32+32, j*32+32 ) )
+                {
+                    // Assume that we're moving up.
+                    m_y = j * 32 + 32;
                     goto end_col_check_y;
                 }
             }
