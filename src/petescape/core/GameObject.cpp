@@ -71,7 +71,7 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->m_facing = 0;
     this->m_walk_phase = 0;
     this->m_width = 32;
-    this->m_height = 48;                                        // FIXME
+    this->m_height = 60;                                        // FIXME
     this->m_is_jumping = false;
 
     this->m_x = 64;
