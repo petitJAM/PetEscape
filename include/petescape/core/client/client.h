@@ -26,7 +26,6 @@ public:
     inline void setNetworkEventSource( ALLEGRO_EVENT_SOURCE *src )
         { m_client_ptr->setEventSource( src ); }
 
-    void introduceObject( const introduce_obj* );
     void updateObject( const update_obj* );
     void destoryObject( const destroy_obj* );
 

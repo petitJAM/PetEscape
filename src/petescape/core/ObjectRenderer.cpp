@@ -33,25 +33,25 @@ void PlayerRenderer::render( GameObject* obj )
 
         if( player->get_facing() == 1 )
         {
-            if( phase == 0 )
+            if( phase == 12 )
                 index = 0;
-            else if( phase == 1 )
+            else if( phase == 13 )
                 index = 2;
-            else if( phase == 2 )
+            else if( phase == 14 )
                 index = 4;
             else
-                index = 6 + phase - 3;
+                index = 6 + phase;
         }
         else
         {
-            if( phase == 0 )
+            if( phase == 12 )
                 index = 1;
-            else if( phase == 1 )
+            else if( phase == 13 )
                 index = 3;
-            else if( phase == 2 )
+            else if( phase == 14 )
                 index = 5;
             else
-                index = 29 - ( phase - 3 );
+                index = 29 - phase;
         }
 
         if( m_sprites[ index ] == nullptr )

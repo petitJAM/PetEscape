@@ -48,6 +48,15 @@ enum GameState
     PausedState
 };
 
+enum NewGameState
+{
+    State_Welcome,
+    State_Init,
+    State_LoadMap,
+    State_LoadObjects,
+    State_Playing
+};
+
 enum GameObjectType
 {
     BlockType = 0x00,

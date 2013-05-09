@@ -18,46 +18,29 @@ namespace common {
  *  Command structures  *
  ************************/
 
-/**
- *  Handshake messages structures.
- */
-typedef struct CLIENT_HELLO
+struct PADDING_PACKET
 {
-    int8_t      client_ip[16];
-} client_hello;
+    uint8_t     padding;
+};
 
-typedef struct CLIENT_USER_INPUT
-{
-    ALLEGRO_EVENT event;
-    time_t event_time;
-} user_input;
-
-typedef struct PADDING_PACKET
-{
-    char        padding;
-} client_close, server_ready;
-
-typedef struct SERVER_INFO
+struct ID_PACKET
 {
     uint32_t    client_id;
-} server_info;
+};
 
-/**
- *  Server messages structures
- */
-typedef struct MAP_HEADER
+struct MAP_HEADER
 {
     uint32_t    stage_length;
     uint32_t    stage_height;
-} map_header;
+};
 
-typedef struct MAP_DATA
+struct MAP_DATA
 {
     uint8_t     packet_number;
-    uint16_t     data_group[MAP_PACKET_SIZE];
-} map_data;
+    uint16_t    data_group[MAP_PACKET_SIZE];
+};
 
-typedef struct UPDATE_OBJ
+struct OBJECT_INFO
 {
     uint32_t    id;
     uint32_t    x;
@@ -66,35 +49,30 @@ typedef struct UPDATE_OBJ
     uint8_t     action;
     uint8_t     facing;
     uint8_t     walk_phase;
-} update_obj, introduce_obj;
+};
 
-typedef struct DESTROY_OBJ
+struct DESTROY_OBJ
 {
     uint32_t    id;
     uint16_t    type;
-} destroy_obj;
+};
 
-/**
- *  Client messages structures
+/*
+ *  Typedefs for structs.
  */
-typedef struct PLAYER_MOVE
-{
-    uint32_t    id;
-    uint8_t     direction;
-    uint8_t     start_stop;
-} player_move;
+typedef struct PADDING_PACKET   padding_packet;
+typedef struct PADDING_PACKET   client_request_map;
+typedef struct PADDING_PACKET   client_request_objs;
+typedef struct PADDING_PACKET   server_sent_map;
+typedef struct PADDING_PACKET   server_sent_objs;
+typedef struct PADDING_PACKET   client_hello;
 
-typedef struct PLAYER_JUMP
-{
-    uint32_t    id;
-    uint8_t     start_stop;
-} player_jump;
-
-typedef struct PLAYER_ATTACK
-{
-    uint32_t    id;
-    uint8_t     type;
-} player_attack;
+typedef struct ID_PACKET        server_info;
+typedef struct ID_PACKET        client_close;
+typedef struct MAP_DATA         map_data;
+typedef struct MAP_HEADER       map_header;
+typedef struct OBJECT_INFO      update_obj;
+typedef struct DESTROY_OBJ      destroy_obj;
 
 /***************************
  *  High-level structures  *
@@ -128,44 +106,36 @@ typedef enum PACKET_ID
     DATA_NULL = 0x0000,
     C_HELLO = 0x0001,
     C_CLOSE,
-    C_READY,
     C_REQUEST_MAP,
-    C_BUILD_OBJECTS,
-    C_USER_INPUT,
+    C_REQUEST_OBJS,
     S_INFO,
     S_MAP_HEADER,
     S_MAP_DATA,
-    S_READY,
+    S_SENT_MAP,
+    S_SENT_OBJS,
     O_UPDATE,
-    O_INTRODUCE,
-    O_DESTORY,
-    P_MOVE,
-    P_JUMP,
-    P_ATTACK
+    O_DESTORY
 } packet_id;
 
 typedef union PACKET_LIST
 {
     client_hello        c_hello;
-    user_input          c_user_input;
     client_close        c_close;
+    client_request_map  c_req_map;
+    client_request_objs c_req_objs;
     server_info         s_info;
+    server_sent_map     s_sent_map;
+    server_sent_objs    s_sent_objs;
     map_header          s_map_header;
     map_data            s_map_data;
     update_obj          o_update;
-    introduce_obj       o_introduce;
     destroy_obj         o_destroy;
-    player_move         p_move;
-    player_jump         p_jump;
-    player_attack       p_attack;
-    server_ready        s_ready;
 } packet_list;
 
 typedef struct NETWORK_PACKET
 {
     packet_header   head;
     packet_list     data;
-    void*           data2;
 } network_packet;
 
 

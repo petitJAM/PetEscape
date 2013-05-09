@@ -53,7 +53,7 @@ uint8_t                       map_height;
 GameMap                      *map;
 BlockMap                     *block_map;
 
-GameState                     game_state;
+NewGameState                  game_state;
 
 int                           num_map_packets_recieved;
 char server_ip_address[ 20 ];
@@ -156,18 +156,32 @@ class GameOps_
 public:
 
     void updateObject( const update_obj *data )
-    {
+    {        
         switch( data->type )
         {
         case PlayerType:
-            players[ data->id ]->setX( data->x );
-            players[ data->id ]->setY( data->y );
-            players[ data->id ]->set_facing( data->facing );
-            players[ data->id ]->set_walk_phase( data->walk_phase );
+            if( players.count( data->id ) == 0 )
+            {
+                genObject( data );
+            }
+            else
+            {
+                players[ data->id ]->setX( data->x );
+                players[ data->id ]->setY( data->y );
+                players[ data->id ]->set_facing( data->facing );
+                players[ data->id ]->set_walk_phase( data->walk_phase );
+            }
         break;
         case OtherType:
-            objs[ data->id ]->setX( data->x );
-            objs[ data->id ]->setY( data->y );
+            if( objs.count( data->id ) == 0 )
+            {
+                genObject( data );
+            }
+            else
+            {
+                objs[ data->id ]->setX( data->x );
+                objs[ data->id ]->setY( data->y );
+            }
         break;
         default:
             MESSAGE( "Unsupported Type. Defaulting to basic type." );
@@ -175,49 +189,56 @@ public:
         }
     }
 
-    void genObject( const introduce_obj *data)
+    void genObject( const update_obj *data)
     {
-        if( objs.count( data->id ) )
+        GameObject *obj = nullptr;
+
+        MESSAGE( "Creating object." );
+
+        switch( data->type )
         {
-            updateObject( data );
+        case PlayerType:
+            MESSAGE( "Got new player" );
+            obj = PlayerObject::CreatePlayer( data->id );
+            players[ data->id ] = static_cast<PlayerObject*>(obj);
+
+            obj->setRenderer( new petescape::core::PlayerRenderer( character_bitmaps[ data->id ] ) );
+            MESSAGE( "Done with new player" );
+        break;
+        case OtherType:
+            obj = GameObject::CreateGameObject( data->id );
+            objs[ data->id ] = obj;
+            obj->setRenderer( new petescape::core::PoorRenderer );
+        break;
+        default:
+            MESSAGE( "Unsupported Type. Defaulting to basic type." );
+            obj = GameObject::CreateGameObject( data->id );
+            objs[ data->id ] = obj;
+        break;
         }
-        else
-        {
-            GameObject *obj = nullptr;
 
-            MESSAGE( "Creating object." );
+        obj->setX( data->x );
+        obj->setY( data->y );
 
-            switch( data->type )
-            {
-            case PlayerType:
-                MESSAGE( "Got new player" );
-                obj = PlayerObject::CreatePlayer( data->id );
-                players[ data->id ] = static_cast<PlayerObject*>(obj);
-
-                obj->setRenderer( new petescape::core::PlayerRenderer( character_bitmaps[ data->id ] ) );
-                MESSAGE( "Done with new player" );
-            break;
-            case OtherType:
-                obj = GameObject::CreateGameObject( data->id );
-                objs[ data->id ] = obj;
-                obj->setRenderer( new petescape::core::PoorRenderer );
-            break;
-            default:
-                MESSAGE( "Unsupported Type. Defaulting to basic type." );
-                obj = GameObject::CreateGameObject( data->id );
-                objs[ data->id ] = obj;
-            break;
-            }
-
-            obj->setX( data->x );
-            obj->setY( data->y );
-
-            obj->put_in_map( block_map );
-        }
+        obj->put_in_map( block_map );
     }
 
     void destroyObject( const destroy_obj *data )
     {
+        switch( data->type )
+        {
+        case PlayerType:
+            players.erase( data->id );
+            break;
+
+        case OtherType:
+            objs.erase( data->id );
+            break;
+
+        default:
+            MESSAGE( "CLIENT: Invalid object type." );
+        }
+
         objs.erase( data->id );
     }
 
@@ -225,70 +246,72 @@ public:
     {
         packet_list new_packet;
 
-        MESSAGE( "Packet?" );
-        MESSAGE( "Opcode? " << packet->head.opcode );
-
         switch( packet->head.opcode )
         {
         case S_INFO:
+        {
+            MESSAGE( "CLIENT: Recieved S_INFO" );
             client_id = packet->data.s_info.client_id;
-            NetOps.async_write( new_packet, C_READY );
-            MESSAGE( "recieved S_INFO, sending C_READY" );
-        break;
+
+            game_state = State_LoadMap;
+
+            MESSAGE( "CLIENT: Sending C_REQUEST_MAP" );
+            NetOps.async_write( new_packet, C_REQUEST_MAP );
+        } break;
         case S_MAP_HEADER:
+        {
+            MESSAGE( "CLIENT: Recieved S_MAP_HEADER" );
             map_length = packet->data.s_map_header.stage_length;
             map_height = packet->data.s_map_header.stage_height;
-            MESSAGE( "recieved S_MAP_HEADER, sending C_REQUEST_MAP" );
-            MESSAGE("expecting map of size " << (int) map_length << " x " << (int) map_height);
+
+            MESSAGE( "CLIENT: MapSize = " << (int) map_length << " x " << (int) map_height );
 
             //a little rough
-            num_map_packets_recieved = 0;
-            map = new GameMap(map_height, map_length);
-
-            NetOps.async_write(new_packet, C_REQUEST_MAP);
-        break;
-
-        case S_READY:
-        {
-            MESSAGE( "READY!" );
-            game_state = PlayingState;
-        }break;
+            map = new GameMap( map_height, map_length );
+        } break;
 
         case S_MAP_DATA:
         {
-            map->addChunk(packet->data.s_map_data);
+            MESSAGE( "CLIENT: Recieved S_MAP_DATA " << ((int)packet->data.s_map_data.packet_number));
+            map->addChunk( packet->data.s_map_data );
+        } break;
 
-            MESSAGE("recieved S_MAP_DATA " << ((int)packet->data.s_map_data.packet_number));
-            num_map_packets_recieved++;
-
+        case S_SENT_MAP:
+        {
+            MESSAGE( "CLIENT: Recieved S_SENT_MAP" );
             // all packets received
-            if(num_map_packets_recieved >= ((map_length * map_height) / MAP_PACKET_SIZE)){
-                //map->display();
-                block_map = new BlockMap(*map);
-                //block_map->display();
+            block_map = new BlockMap( *map );
 
-                NetOps.async_write(new_packet, C_BUILD_OBJECTS);
-                MESSAGE( "sending C_BUILD_OBJECTS");
-            }
+            game_state = State_LoadObjects;
+
+            MESSAGE( "CLIENT: Sending C_REQUEST_OBJS" );
+            NetOps.async_write( new_packet, C_REQUEST_OBJS );
         }
-        break;
-        case O_INTRODUCE:
-            MESSAGE( "recieved O_INTRODUCE" );
-            genObject( &packet->data.o_introduce );
-        break;
+
+        case S_SENT_OBJS:
+        {
+            MESSAGE( "CLIENT: Recieved S_SENT_OBJS" );
+
+            game_state = State_Playing;
+        } break;
+
         case O_UPDATE:
-            MESSAGE( "recieved O_UPDATE" );
+        {
+//            MESSAGE( "CLIENT: Recieved O_UPDATE" );
             updateObject( &packet->data.o_update );
-        break;
+        } break;
+
         case O_DESTORY:
-            MESSAGE( "recieved O_DESTROY" );
+        {
+            MESSAGE( "CLIENT: Recieved O_DESTROY" );
             destroyObject( &packet->data.o_destroy );
-        break;
+        } break;
 
         default:
+        {
             // Do nothing.
             MESSAGE( "Do nothing." );
-        break;
+        } break;
         }
     }
 
@@ -509,11 +532,9 @@ void render_playing_state()
         for( int j = 0; j < block_map->getHeight(); ++j )
         {
             if( block_map->getBlock( i, j ).getBlockType() )
+            {
                 al_draw_bitmap( tiles[ block_map->getBlock( i, j ).getBlockType() - 1 ], i * 32, j * 32, 0 );
-
-//                al_draw_filled_rectangle( i * 32, j * 32, (i+1) * 32, (j+1) * 32, al_map_rgb( 127,127,127 ) );
-//            else
-//                al_draw_filled_rectangle( i * 32, j * 32, (i+1) * 32, (j+1) * 32, al_map_rgb( 255,255,255 ) );
+            }
         }
     }
 
@@ -547,7 +568,7 @@ int c_main( int /*argc*/, char **argv )
     block_map = nullptr;
     bool key[4] = { false, false, false, false};
 
-    game_state = WelcomeState;
+    game_state = State_Welcome;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
 
     try
@@ -557,7 +578,7 @@ int c_main( int /*argc*/, char **argv )
 
         if( !al_init() )
         {
-            MESSAGE( "Failed to initialize Allegro." );
+            MESSAGE( "CLIENT: Error initializing Allegro." );
             return -1;
         }
 
@@ -565,31 +586,31 @@ int c_main( int /*argc*/, char **argv )
         al_change_directory( al_path_cstr( path, '/' ) );
 
         if(!al_install_keyboard()) {
-            MESSAGE( "failed to initialize the keyboard!" );
+            MESSAGE( "CLIENT: Error initializing Allegro keyboard driver." );
             return -1;
         }
 
         if( !al_install_mouse() )
         {
-            MESSAGE( "Error initializing Allegro mouse driver." );
+            MESSAGE( "CLIENT: Error initializing Allegro mouse driver." );
             return -2;
         }
 
         if( !( client_queue = al_create_event_queue() ) )
         {
-            MESSAGE( "Unable to create Allegro Event Queue." );
+            MESSAGE( "CLIENT: Error initializing Allegro Event Queue." );
             return -3;
         }
 
         if( !( timer = al_create_timer( 1.0 / FPS ) ) )
         {
-            MESSAGE( "Error initializing Allegro timer." );
+            MESSAGE( "CLIENT: Error initializing Allegro timer." );
             return -4;
         }
 
         if( !( display = al_create_display( 800, 608 ) ) )
         {
-            MESSAGE( "Error initializing Allegro dispay driver." );
+            MESSAGE( "CLIENT: Error initializing Allegro dispay driver." );
             al_destroy_timer( timer );
             return -5;
         }
@@ -599,7 +620,7 @@ int c_main( int /*argc*/, char **argv )
 
         if( !( default_font = al_load_ttf_font( "assets/fonts/FRABK.TTF", 35, 0 ) ) )
         {
-            MESSAGE( "Error loading font." );
+            MESSAGE( "CLIENT: Error loading font." );
             al_destroy_timer( timer );
             al_destroy_display( display );
             return -6;
@@ -609,9 +630,9 @@ int c_main( int /*argc*/, char **argv )
         al_init_primitives_addon();
 
         // Load the images.
-        MESSAGE( "Loading images..." );
+        MESSAGE( "CLIENT: Loading images..." );
         load_images();
-        MESSAGE( "Loaded imgaes." );
+        MESSAGE( "CLIENT: Loaded imgaes." );
 
         al_register_event_source( client_queue, al_get_display_event_source( display ) );
         al_register_event_source( client_queue, al_get_timer_event_source( timer ) );
@@ -635,7 +656,7 @@ int c_main( int /*argc*/, char **argv )
 
                 static uint64_t counter = 0;
 
-                if( game_state == PlayingState )
+                if( game_state == State_Playing )
                 {
                     if( players[ client_id ] == nullptr )
                         continue;
@@ -663,8 +684,6 @@ int c_main( int /*argc*/, char **argv )
                     players[ client_id ]->update();
                     ++counter;
 
-//                    if( counter % 4 == 0 )
-//                    {
                     // For now throw a packet out every frame. Not laggy at all.
                     packet_list packet;
                     packet.o_update.id = client_id;
@@ -675,7 +694,6 @@ int c_main( int /*argc*/, char **argv )
                     packet.o_update.y = (uint32_t)( players[ client_id ]->getY() );
 
                     NetOps.async_write( packet, O_UPDATE );
-//                    }
                 }
 
                 redraw = true;
@@ -684,7 +702,7 @@ int c_main( int /*argc*/, char **argv )
 
             case ALLEGRO_EVENT_KEY_DOWN: {
 
-                if( game_state == PlayingState )
+                if( game_state == State_Playing )
                 {
                     switch(event.keyboard.keycode)
                     {
@@ -710,7 +728,7 @@ int c_main( int /*argc*/, char **argv )
             } break;
 
             case ALLEGRO_EVENT_KEY_UP: {
-               if( game_state == PlayingState )
+               if( game_state == State_Playing )
                {
                    switch(event.keyboard.keycode)
                    {
@@ -744,16 +762,16 @@ int c_main( int /*argc*/, char **argv )
 
                 switch( game_state )
                 {
-                case WelcomeState: {
+                case State_Welcome: {
                     // Did they click on the first box?
                     if( IS_WITHIN( play_solo_bounds, x, y ) )
                     {
-                        MESSAGE( "CLICKED PLAY SOLO" );
-
                         launcher->start( "PetEscape --server" );
 
                         if( socket == nullptr )
                         {
+                            game_state = State_Init;
+
                             boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
                             boost::asio::ip::tcp::resolver::query tcp_query( "127.0.0.1", "2001" );
                             boost::asio::ip::tcp::resolver::iterator tcp_endpoint;
@@ -762,16 +780,13 @@ int c_main( int /*argc*/, char **argv )
 
                             socket = new boost::asio::ip::tcp::socket( client_io_service );
                             boost::asio::connect( *socket, tcp_endpoint );
-                            MESSAGE( "Connected." );
 
                             // padding.c_hello.solo = 1;
+                            MESSAGE( "CLIENT: Sending C_HELLO" );
                             NetOps.async_write( padding, C_HELLO );
-                            MESSAGE( "sending C_HELLO" );
 
                             NetOps.async_read();
                         }
-
-                        game_state = SetupState;
                     }
 
                     // Did they click on the second box?
@@ -779,12 +794,12 @@ int c_main( int /*argc*/, char **argv )
                     // because play solo won't allow more than one connection.
                     if( IS_WITHIN( host_game_bounds, x, y ) )
                     {
-                        MESSAGE( "CLICKED HOST GAME" );
-
                         launcher->start( "PetEscape --server" );
 
                         if( socket == nullptr )
                         {
+                            game_state = State_Init;
+
                             boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
                             boost::asio::ip::tcp::resolver::query tcp_query( "127.0.0.1", "2001" );
                             boost::asio::ip::tcp::resolver::iterator tcp_endpoint;
@@ -793,39 +808,30 @@ int c_main( int /*argc*/, char **argv )
 
                             socket = new boost::asio::ip::tcp::socket( client_io_service );
                             boost::asio::connect( *socket, tcp_endpoint );
-                            MESSAGE( "Connected." );
 
                             // padding.c_hello.solo = 0;
+                            MESSAGE( "CLIENT: Sending C_HELLO" );
                             NetOps.async_write( padding, C_HELLO );
-                            MESSAGE( "sending C_HELLO" );
 
                             NetOps.async_read();
                         }
-
-                        game_state = SetupState;
                     }
 
                     // Did they click on the third box?
                     if( IS_WITHIN( join_game_bounds, x, y ) )
                     {
-                        MESSAGE( "CLICKED JOIN GAME" );
-
                         char *ip = launcher->getIP();
 
                         if( ip != nullptr )
                         {
                             strcpy( server_ip_address, ip );
                             free( ip );
-
-                            MESSAGE( server_ip_address );
-                        }
-                        else
-                        {
-                            MESSAGE( "Nevermind." );
                         }
 
                         if( ( ip != nullptr ) && ( socket == nullptr ) )
                         {
+                            game_state = State_Init;
+
                             boost::asio::ip::tcp::resolver tcp_resolver( client_io_service );
                             boost::asio::ip::tcp::resolver::query tcp_query( server_ip_address, "2001" );
                             boost::asio::ip::tcp::resolver::iterator tcp_endpoint;
@@ -834,22 +840,18 @@ int c_main( int /*argc*/, char **argv )
 
                             socket = new boost::asio::ip::tcp::socket( client_io_service );
                             boost::asio::connect( *socket, tcp_endpoint );
-                            MESSAGE( "Connected." );
 
                             // padding.c_hello.solo = 0;
+                            MESSAGE( "CLIENT: Sending C_HELLO" );
                             NetOps.async_write( padding, C_HELLO );
-                            MESSAGE( "sending C_HELLO" );
 
                             NetOps.async_read();
-
-                            game_state = SetupState;
                         }
                     }
 
                     // Did they click on the fourth box?
                     if( IS_WITHIN( quit_game_bounds, x, y ) )
                     {
-                        MESSAGE( "CLICKED QUIT GAME" );
                         should_exit = true;
                     }
 
@@ -858,8 +860,6 @@ int c_main( int /*argc*/, char **argv )
             } break;
 
             case NETWORK_RECV: {
-                MESSAGE( "recieving event NETWORK_RECV" );
-
                 // Pass the packet off to the packet handler.
                 GameOps.handlePacket( (network_packet *)event.user.data1 );
 
@@ -868,16 +868,19 @@ int c_main( int /*argc*/, char **argv )
             } break;
 
             case NETWORK_CLOSE: {
-                MESSAGE( "recieving event NETWORK_CLOSE" );
+                MESSAGE( "CLIENT: Recieving event NETWORK_CLOSE" );
             } break;
 
             case ALLEGRO_EVENT_DISPLAY_CLOSE: {
-                packet_list padding;
+                packet_list c_close;
 
-                MESSAGE( "recieving event ALLEGRO_EVENT_DISPLAY_CLOSE" );
+                MESSAGE( "CLIENT: Recieving event ALLEGRO_EVENT_DISPLAY_CLOSE" );
 
                 if( socket != nullptr )
-                    NetOps.async_write( padding, C_CLOSE );
+                {
+                    c_close.c_close.client_id = client_id;
+                    NetOps.async_write( c_close, C_CLOSE );
+                }
 
                 should_exit = true;
             } break;
@@ -890,14 +893,11 @@ int c_main( int /*argc*/, char **argv )
 
                 switch( game_state )
                 {
-                case WelcomeState:
+                case State_Welcome:
                     render_welcome_state();
                     break;
 
-                case PlayingState:
-                    if( block_map == nullptr )
-                        continue;
-
+                case State_Playing:
                     render_playing_state();
                     break;
                 }
