@@ -104,13 +104,15 @@ void PlayerObject::start_jump()
 
 void PlayerObject::update()
 {
+    int h13 = 15; // height / 3
+    int h23 = h13 * 2; // 2*height / 3
     // do collision detection.
     float new_x1 = m_x + m_vx + m_ax;
     float new_x2 = m_x + m_vx + m_ax + m_width / 2;
     float new_x3 = m_x + m_vx + m_ax + m_width;
     float new_y1 = m_y + m_vy + m_ay;
-    float new_y2 = m_y + m_vy + m_ay + 20; // ~ height / 3
-    float new_y3 = m_y + m_vy + m_ay + 40; // ~ 2*height / 3
+    float new_y2 = m_y + m_vy + m_ay + h13; // ~ height / 3
+    float new_y3 = m_y + m_vy + m_ay + h23; // ~ 2*height / 3
     float new_y4 = m_y + m_vy + m_ay + m_height;
 
     bool x_collision = true;
@@ -122,27 +124,27 @@ void PlayerObject::update()
         {
             if( m_the_map->getBlock( i, j ).getBlockType() != 0 )
             {
-                if( CONTAINS( new_x1, m_y           , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x1, m_y + 20      , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x1, m_y + 40      , i*32, j*32, i*32+32, j*32+32 ) ||
+                if( CONTAINS( new_x1, m_y            , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x1, m_y + h13      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x1, m_y + h23      , i*32, j*32, i*32+32, j*32+32 ) ||
                     CONTAINS( new_x1, m_y + m_height, i*32, j*32, i*32+32, j*32+32 ) )
                 {
                     m_x = i * 32 + 32;
                     goto end_col_check_x;
                 }
 
-                if( CONTAINS( new_x2, m_y           , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x2, m_y + 20      , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x2, m_y + 40      , i*32, j*32, i*32+32, j*32+32 ) ||
+                if( CONTAINS( new_x2, m_y            , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x2, m_y + h13      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x2, m_y + h23      , i*32, j*32, i*32+32, j*32+32 ) ||
                     CONTAINS( new_x2, m_y + m_height, i*32, j*32, i*32+32, j*32+32 ) )
                 {
                     m_x = i * 32 + 16;
                     goto end_col_check_x;
                 }
 
-                if( CONTAINS( new_x3, m_y           , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x3, m_y + 20      , i*32, j*32, i*32+32, j*32+32 ) ||
-                    CONTAINS( new_x3, m_y + 40      , i*32, j*32, i*32+32, j*32+32 ) ||
+                if( CONTAINS( new_x3, m_y            , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x3, m_y + h13      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x3, m_y + h23      , i*32, j*32, i*32+32, j*32+32 ) ||
                     CONTAINS( new_x3, m_y + m_height, i*32, j*32, i*32+32, j*32+32 ) )
                 {
                     m_x = i * 32 - 32;
