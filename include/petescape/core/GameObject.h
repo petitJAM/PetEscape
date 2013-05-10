@@ -83,6 +83,7 @@ protected:
 
 #define IS_ZERO( x ) ( x < 0.001 && x > -0.001 )
 
+// top left, bottom right
 #define INTERSECTS( x1,y1,x2,y2,x3,y3,x4,y4 ) \
     (!( ((x1)>=(x4) || ((x3)>=(x2) || (y1)>=(y4)) || ((y3)>=(y2))) ))
 
@@ -100,10 +101,13 @@ public:
     void update();
 
 // Movement Stuff
-    void start_move_left(){ this->m_vx = -PLAYER_WALK_AMT; this->m_facing = 0; }
-    void start_move_right(){ this->m_vx = PLAYER_WALK_AMT; this->m_facing = 1; }
+    void start_move_left();
+    void start_move_right();
     void stop_moving(){ this->m_vx = 0; }
+    void get_hit(){ this->is_hit = 1; }
+    void unhit(){ this->is_hit = 0; }
     void start_jump();
+    void attack();
 
 // Accessors
     inline uint8_t get_facing(){ return this->m_facing; }
@@ -121,6 +125,10 @@ private:
      * 14   = Attacking
      */
     uint8_t m_walk_phase;
+
+    uint8_t is_hit;
+
+    uint8_t is_attacking;
 
     /*
      * 0 = Left

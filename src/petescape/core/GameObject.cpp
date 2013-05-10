@@ -74,6 +74,8 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->m_height = 60;                                        // FIXME
     this->m_is_jumping = false;
 
+    this->is_attacking = 0;
+
     this->m_x = 64;
     this->m_y = 128;
 }
@@ -94,11 +96,24 @@ PlayerObject* PlayerObject::CreatePlayer( uint32_t id )
 
 void PlayerObject::start_jump()
 {
-    if( !this->m_is_jumping )
+    if( !this->m_is_jumping && !this->is_hit && !this->is_attacking)
     {
         this->m_vy = JUMP_VELOCITY;
         this->m_walk_phase = 3;
         this->m_is_jumping = true;
+    }
+    else if (this->is_attacking && this->m_is_jumping)
+    {
+        this->m_vy = JUMP_VELOCITY / 4;
+        this->m_walk_phase = 3;
+        this->m_is_jumping = true;
+    }
+}
+
+void PlayerObject::attack(){
+    if (this->is_attacking == 0)
+    {
+        this->is_attacking = 15;
     }
 }
 
@@ -222,12 +237,44 @@ end_col_check_y:
         m_y += m_vy;
     }
 
-    if( this->m_is_jumping )
+    if (this->is_hit)
+        this->m_walk_phase = 13;
+    else if (this->is_attacking)
+    {
+        this->m_walk_phase=14;
+        this->is_attacking--;
+        printf("is_attacking %d\n", is_attacking);
+    }
+    else if( this->m_is_jumping )
         this->m_walk_phase = 1;
     else if( !IS_ZERO( this->m_vx ) )
         this->m_walk_phase = ( this->m_walk_phase + 1 ) % 12;
     else
         this->m_walk_phase = 12;
+}
+
+void PlayerObject::start_move_left(){
+    if (!is_hit && !is_attacking)
+    {
+        this->m_vx = -PLAYER_WALK_AMT;
+        this->m_facing = 0;
+    }
+    else
+    {
+        this->m_vx = 0;
+    }
+}
+
+void PlayerObject::start_move_right(){
+    if (!is_hit && !is_attacking)
+    {
+        this->m_vx = PLAYER_WALK_AMT;
+        this->m_facing = 1;
+    }
+    else
+    {
+        this->m_vx = 0;
+    }
 }
 
 }

@@ -55,16 +55,16 @@ BlockMap                     *block_map;
 
 NewGameState                  game_state;
 
-int                           enemy1state; // magic right now , change it later
-int                           enemy1facing;
+uint8_t                       enemy1state; // magic right now , change it later
+uint8_t                       enemy1facing;
 
-int                           enemy2state;
-int                           enemy2facing;
+uint8_t                       enemy2state;
+uint8_t                       enemy2facing;
 
-int                           enemy3state;
-int                           enemy3facing;
+uint8_t                       enemy3state;
+uint8_t                       enemy3facing;
 
-int                           num_map_packets_recieved;
+uint8_t                           num_map_packets_recieved;
 char server_ip_address[ 20 ];
 }
 
@@ -648,6 +648,10 @@ void render_pause_state()
 
 }
 
+bool check_collision(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2) {
+    return INTERSECTS( x1, y1, x1+32, y1+64, x2, y2, x2+43, y2+64 );
+}
+
 int c_main( int /*argc*/, char **argv )
 {
     Launcher *launcher = new Launcher();
@@ -659,7 +663,7 @@ int c_main( int /*argc*/, char **argv )
     display = nullptr;
     timer = nullptr;
     block_map = nullptr;
-    bool key[4] = { false, false, false, false};
+    bool key[5] = { false, false, false, false, false};
 
     game_state = State_Welcome;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
@@ -774,6 +778,11 @@ int c_main( int /*argc*/, char **argv )
                         players[ client_id ]->stop_moving();
                     }
 
+                    if( key[ KEY_A ] )
+                    {
+                        players[ client_id ]->attack();
+                    }
+
                     players[ client_id ]->update();
                     ++counter;
 
@@ -806,6 +815,31 @@ int c_main( int /*argc*/, char **argv )
                     }else{
                         current_enemy_bounds[2].x+=15; // temp in changing enemy location
                     }
+
+                    if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
+                                     current_enemy_bounds[0].x, current_enemy_bounds[0].y ) )
+                    {
+                        MESSAGE( "Collided 0" );
+                        players[ client_id ]->get_hit();
+                    }
+                    else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
+                                     current_enemy_bounds[1].x, current_enemy_bounds[1].y ) )
+                    {
+                        MESSAGE( "Collided 1" );
+                        players[ client_id ]->get_hit();
+                    }
+                    else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
+                                     current_enemy_bounds[2].x, current_enemy_bounds[2].y ) )
+                    {
+                        MESSAGE( "Collided 2" );
+                        players[ client_id ]->get_hit();
+                    }
+                    else
+                    {
+                        players[ client_id ]->unhit();
+                    }
+
+
 
                     // For now throw a packet out every frame. Not laggy at all.
                     packet_list packet;
@@ -845,6 +879,10 @@ int c_main( int /*argc*/, char **argv )
                         key[KEY_RIGHT] = true;
                         break;
 
+                    case ALLEGRO_KEY_A:
+                        key[KEY_A] = true;
+                        break;
+
                     }
                 }
 
@@ -871,6 +909,9 @@ int c_main( int /*argc*/, char **argv )
                        key[KEY_RIGHT] = false;
                        break;
 
+                   case ALLEGRO_KEY_A:
+                       key[KEY_A] = false;
+                       break;
                    }
                }
 
