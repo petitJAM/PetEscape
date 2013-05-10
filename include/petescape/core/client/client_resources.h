@@ -23,15 +23,19 @@ enum MYKEYS {
 
 typedef struct
 {
-    ALLEGRO_BITMAP *character_bitmaps[4][30];
-    ALLEGRO_BITMAP *current_char_bitmap[4];
-    Rectange current_char_bounds[4];
+    int32_t type;
+    ALLEGRO_BITMAP *enemy_bitmaps[3][8];
+    ALLEGRO_BITMAP *current_enemy_bitmap;
+    Rectange current_enemy_bound;
     int32_t health;
     int32_t damage;
     bool is_dead;
     int32_t dx;
     int32_t dy;
-} Character;
+} Enemy;
+
+Enemy *enemy1;
+Enemy *all_enemies[25];
 
 using namespace petescape::core;
 
@@ -42,7 +46,9 @@ ALLEGRO_BITMAP *play_solo_bitmap,
                *join_game_bitmap,
                *quit_game_bitmap,
                *character_bitmaps[4][30],
-               *current_char_bitmap[4];
+               *enemy_bitmaps[3][8],
+               *current_char_bitmap[4],
+               *current_enemy_bitmap[3];
 
 ALLEGRO_BITMAP *tiles[25];
 
@@ -50,9 +56,9 @@ Rectange play_solo_bounds,
          host_game_bounds,
          join_game_bounds,
          quit_game_bounds,
-         current_char_bounds[4];
+         current_char_bounds[4],
+         current_enemy_bounds[3];
 
-Character current_player;
 
 
 ALLEGRO_FONT *default_font;

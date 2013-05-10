@@ -1,4 +1,4 @@
-
+#include <iostream>
 #include "petescape/core/client/client.h"
 #include "petescape/core/client/client_resources.h"
 #include "petescape/core/ObjectRenderer.h"
@@ -54,6 +54,15 @@ GameMap                      *map;
 BlockMap                     *block_map;
 
 NewGameState                  game_state;
+
+int                           enemy1state; // magic right now , change it later
+int                           enemy1facing;
+
+int                           enemy2state;
+int                           enemy2facing;
+
+int                           enemy3state;
+int                           enemy3facing;
 
 int                           num_map_packets_recieved;
 char server_ip_address[ 20 ];
@@ -256,6 +265,7 @@ public:
             game_state = State_LoadMap;
 
             MESSAGE( "CLIENT: Sending C_REQUEST_MAP" );
+            Sleep(2);
             NetOps.async_write( new_packet, C_REQUEST_MAP );
         } break;
         case S_MAP_HEADER:
@@ -285,13 +295,14 @@ public:
             game_state = State_LoadObjects;
 
             MESSAGE( "CLIENT: Sending C_REQUEST_OBJS" );
+            Sleep(2);
             NetOps.async_write( new_packet, C_REQUEST_OBJS );
         }
 
         case S_SENT_OBJS:
         {
             MESSAGE( "CLIENT: Recieved S_SENT_OBJS" );
-
+            Sleep(2);
             game_state = State_Playing;
         } break;
 
@@ -455,6 +466,47 @@ void load_images()
 
     al_destroy_bitmap( char_map );
 
+    // Load enemy
+    ALLEGRO_BITMAP *enemy_map = al_load_bitmap( "assets/character/enemy_map.bmp" );
+    al_convert_mask_to_alpha(enemy_map,al_map_rgb(221,6,178));
+
+    if (enemy_map == nullptr){
+        MESSAGE( "Could not load character images..." );
+        exit( 1 );
+    }
+
+    tile_count = 0;
+    ALLEGRO_BITMAP **enemies = GameOps.load_sprite_map( enemy_map, 43, 64, tile_count );
+
+    if( tile_count != ( 8 * 3 ) )
+    {
+        MESSAGE( "Didn't load correct image count... " << tile_count );
+        exit( 1 );
+    }
+
+    if( enemies != nullptr )
+    {
+        for( int i = 0; i < 3; ++i )
+        {
+            for( int j = 0; j < 8; ++j )
+            {
+                enemy_bitmaps[ i ][ j ] = enemies[ i * 8 + j ];
+            }
+
+            current_enemy_bitmap[ i ] = enemies[ i * 8 ];
+            current_enemy_bounds[ i ].x = 800;
+            current_enemy_bounds[ i ].y = 480;
+            current_enemy_bounds[ i ].width = 43;
+            current_enemy_bounds[ i ].height = 64;
+        }
+    }
+    else
+    {
+        MESSAGE( "Could not load character images..." );
+        exit( 1 );
+    }
+    // end enemy
+
     // Load the tileset.
     ALLEGRO_BITMAP *tile_map = al_load_bitmap( "assets/tiles.bmp" );
     tile_count = 0;
@@ -524,7 +576,6 @@ void render_welcome_state()
 void render_playing_state()
 {
     // Render the background.
-
     al_clear_to_color( al_map_rgb( 105, 230, 255 ) );
 
     for( int i = 0; i < block_map->getLength(); ++i )
@@ -548,6 +599,48 @@ void render_playing_state()
     {
         ((GameObject*)(tmp.second))->render();
     }
+
+//    if (enemy1 = nullptr){
+//        printf("enemy not created");
+//        enemy1->type=0;
+//        enemy1->current_enemy_bitmap=enemy_bitmaps[enemy1->type][0];
+//        enemy1->current_enemy_bound.x=100;
+//        enemy1->current_enemy_bound.y = 100;
+//        enemy1->current_enemy_bound.width = 43;
+//        enemy1->current_enemy_bound.height = 64;
+//    }
+
+    // ENEMY 1
+    if (enemy1facing%2==0){
+        current_enemy_bitmap[0] = enemy_bitmaps[0][enemy1state%4];
+    }else{
+        current_enemy_bitmap[0] = enemy_bitmaps[0][enemy1state%4+4];
+    }
+
+    al_draw_bitmap( current_enemy_bitmap[0], current_enemy_bounds[0].x , current_enemy_bounds[0].y, 0);
+    enemy1state++;
+
+    // ENEMY 2
+    if (enemy2facing%2==0){
+        current_enemy_bitmap[1] = enemy_bitmaps[1][enemy2state%4];
+    }else{
+        current_enemy_bitmap[1] = enemy_bitmaps[1][enemy2state%4+4];
+    }
+
+    al_draw_bitmap( current_enemy_bitmap[1], current_enemy_bounds[1].x , current_enemy_bounds[1].y, 0);
+    enemy2state++;
+
+    // ENEMY 3
+    if (enemy3facing%2==0){
+        current_enemy_bitmap[2] = enemy_bitmaps[2][enemy3state%4];
+    }else{
+        current_enemy_bitmap[2] = enemy_bitmaps[2][enemy3state%4+4];
+    }
+
+    al_draw_bitmap( current_enemy_bitmap[2], current_enemy_bounds[2].x , current_enemy_bounds[2].y, 0);
+    enemy3state++;
+
+//    al_draw_bitmap( enemy1->current_enemy_bitmap, enemy1->current_enemy_bound.x, enemy1->current_enemy_bound.y, 0);
 }
 
 void render_pause_state()
@@ -683,6 +776,36 @@ int c_main( int /*argc*/, char **argv )
 
                     players[ client_id ]->update();
                     ++counter;
+
+                    // ENEMY 1
+                    if (current_enemy_bounds[0].x<-37||current_enemy_bounds[0].x>805){
+                       enemy1facing++;
+                    }
+                    if (enemy1facing%2==0){
+                        current_enemy_bounds[0].x-=5; // temp in changing enemy location
+                    }else{
+                        current_enemy_bounds[0].x+=5; // temp in changing enemy location
+                    }
+
+                    // ENEMY 2
+                    if (current_enemy_bounds[1].x<-37||current_enemy_bounds[1].x>805){
+                       enemy2facing++;
+                    }
+                    if (enemy2facing%2==0){
+                        current_enemy_bounds[1].x-=10; // temp in changing enemy location
+                    }else{
+                        current_enemy_bounds[1].x+=10; // temp in changing enemy location
+                    }
+
+                    // ENEMY 3
+                    if (current_enemy_bounds[2].x<-37||current_enemy_bounds[2].x>805){
+                       enemy3facing++;
+                    }
+                    if (enemy3facing%2==0){
+                        current_enemy_bounds[2].x-=15; // temp in changing enemy location
+                    }else{
+                        current_enemy_bounds[2].x+=15; // temp in changing enemy location
+                    }
 
                     // For now throw a packet out every frame. Not laggy at all.
                     packet_list packet;
