@@ -131,6 +131,34 @@ private:
     bool m_is_jumping;
 };
 
+class EnemyObject : public GameObject
+{
+    EnemyObject ( uint32_t = 0 );
+
+public:
+    static EnemyObject* CreateEnemy();
+    static EnemyObject* CreateEnemy( uint32_t );
+
+    void update();
+
+private:
+    /*
+     * 0-11 = Walking
+     * 12   = Still
+     * 13   = Injured
+     * 14   = Attacking
+     */
+    uint8_t m_walk_phase;
+
+    /*
+     * 0 = Left
+     * 1 = Right
+     */
+    uint8_t m_facing;
+
+    bool m_is_jumping;
+};
+
 }
 }
 

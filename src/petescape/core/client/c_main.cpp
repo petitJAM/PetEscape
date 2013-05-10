@@ -422,6 +422,14 @@ void load_images()
         exit( 1 );
     }
 
+    ALLEGRO_BITMAP *enemy1_map = al_load_bitmap( "assets/character/monster1.bmp" );
+    al_convert_mask_to_alpha(enemy1_map,al_map_rgb(255,255,255));
+
+    if (enemy1_map == nullptr){
+        MESSAGE( "Could not load enemy1 images..." );
+        exit( 1 );
+    }
+
     int tile_count = 0;
     ALLEGRO_BITMAP **characters = GameOps.load_sprite_map( char_map, 32, 64, tile_count );
 

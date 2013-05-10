@@ -96,6 +96,7 @@ void PlayerObject::start_jump()
 {
     if( !this->m_is_jumping )
     {
+        // MESSAGE( "start_jump" );
         this->m_vy = JUMP_VELOCITY;
         this->m_walk_phase = 3;
         this->m_is_jumping = true;
@@ -228,6 +229,42 @@ end_col_check_y:
         this->m_walk_phase = ( this->m_walk_phase + 1 ) % 12;
     else
         this->m_walk_phase = 12;
+}
+
+EnemyObject::EnemyObject( uint32_t id ) :
+    GameObject( id )
+{
+    // Any Enemy specific values get set here
+    this->m_use_accel = true;
+    this->m_use_vel = true;
+    this->m_ay = 2;
+    this->m_facing = 0;
+    this->m_walk_phase = 0;
+    this->m_width = 32;
+    this->m_height = 32;
+    this->m_is_jumping = false;
+
+    this->m_x = 64;
+    this->m_y = 64;
+}
+
+EnemyObject* EnemyObject::CreateEnemy()
+{
+    static uint32_t n_id = 0;
+
+    return CreateEnemy( n_id++ );
+}
+
+EnemyObject* EnemyObject::CreateEnemy( uint32_t id )
+{
+    EnemyObject *obj = new EnemyObject( id );
+
+    return obj;
+}
+
+void EnemyObject::update()
+{
+    //
 }
 
 }
