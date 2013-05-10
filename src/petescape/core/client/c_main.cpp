@@ -231,9 +231,85 @@ public:
 
 namespace {
 GameOps_   GameOps;
+
+void load_images()
+{
+    static bool loaded = false;
+
+    if( loaded )
+        return;
+
+    // Load bitmaps that we need.
+    play_solo_bitmap = al_load_bitmap( "assets/welcome_screen/play_solo.bmp" );
+    host_game_bitmap = al_load_bitmap( "assets/welcome_screen/host_game.bmp" );
+    join_game_bitmap = al_load_bitmap( "assets/welcome_screen/join_game.bmp" );
+    quit_game_bitmap = al_load_bitmap( "assets/welcome_screen/quit_game.bmp" );
+
+    if( !play_solo_bitmap ||
+        !host_game_bitmap ||
+        !join_game_bitmap ||
+        !quit_game_bitmap)
+    {
+        MESSAGE( "Unable to load welcome screen bitmaps. Exiting." );
+        exit( 2 );
+    }
+
+    play_solo_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( play_solo_bitmap ) / 2;
+    play_solo_bounds.y = al_get_display_height( display ) / 5 * 1 - al_get_bitmap_height( play_solo_bitmap ) / 2;
+    play_solo_bounds.width = al_get_bitmap_width( play_solo_bitmap );
+    play_solo_bounds.height = al_get_bitmap_height( play_solo_bitmap );
+
+    host_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( host_game_bitmap ) / 2;
+    host_game_bounds.y = al_get_display_height( display ) / 5 * 2 - al_get_bitmap_height( host_game_bitmap ) / 2;
+    host_game_bounds.width = al_get_bitmap_width( host_game_bitmap );
+    host_game_bounds.height = al_get_bitmap_height( host_game_bitmap );
+
+    join_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( join_game_bitmap ) / 2;
+    join_game_bounds.y = al_get_display_height( display ) / 5 * 3 - al_get_bitmap_height( join_game_bitmap ) / 2;
+    join_game_bounds.width = al_get_bitmap_width( join_game_bitmap );
+    join_game_bounds.height = al_get_bitmap_height( join_game_bitmap );
+
+    quit_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( quit_game_bitmap ) / 2;
+    quit_game_bounds.y = al_get_display_height( display ) / 5 * 4 - al_get_bitmap_height( quit_game_bitmap ) / 2;
+    quit_game_bounds.width = al_get_bitmap_width( quit_game_bitmap );
+    quit_game_bounds.height = al_get_bitmap_height( quit_game_bitmap );
+
+    loaded = true;
 }
 
-// cut image loading
+}
+
+void unload_images()
+{
+    al_destroy_bitmap( play_solo_bitmap );
+    al_destroy_bitmap( host_game_bitmap );
+    al_destroy_bitmap( join_game_bitmap );
+    al_destroy_bitmap( quit_game_bitmap );
+}
+
+void render_welcome_state()
+{
+    al_draw_bitmap( play_solo_bitmap,
+                    play_solo_bounds.x,
+                    play_solo_bounds.y,
+                    0 );
+
+    al_draw_bitmap( host_game_bitmap,
+                    host_game_bounds.x,
+                    host_game_bounds.y,
+                    0 );
+
+    al_draw_bitmap( join_game_bitmap,
+                    join_game_bounds.x,
+                    join_game_bounds.y,
+                    0 );
+
+    al_draw_bitmap( quit_game_bitmap,
+                    quit_game_bounds.x,
+                    quit_game_bounds.y,
+                    0 );
+
+}
 
 int c_main( int /*argc*/, char **argv )
 {
@@ -582,7 +658,7 @@ int c_main( int /*argc*/, char **argv )
                 switch( game_state )
                 {
                 case State_Welcome:
-                    block_map->render_welcome_state();
+                    render_welcome_state();
                     break;
 
                 case State_Playing:

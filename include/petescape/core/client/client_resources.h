@@ -21,6 +21,14 @@ enum MYKEYS {
    KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A
 };
 
-// cut stuff
+ALLEGRO_BITMAP *play_solo_bitmap,
+               *host_game_bitmap,
+               *join_game_bitmap,
+               *quit_game_bitmap;
+
+Rectangle_welcome play_solo_bounds,
+                  host_game_bounds,
+                  join_game_bounds,
+                  quit_game_bounds;
 
 #endif // CLIENT_RESOURCES_H

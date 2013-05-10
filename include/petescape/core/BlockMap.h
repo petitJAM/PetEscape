@@ -1,6 +1,8 @@
 #ifndef BLOCKMAP_H
 #define BLOCKMAP_H
 
+#pragma once
+
 #include "petescape/core/GameObject.h"
 #include "petescape/core/Block.h"
 #include "petescape/core/GameMap.h"
@@ -66,20 +68,12 @@ using namespace petescape::core;
 
 typedef std::pair< uint32_t, GameObject* > m_element;
 
-ALLEGRO_BITMAP *play_solo_bitmap,
-               *host_game_bitmap,
-               *join_game_bitmap,
-               *quit_game_bitmap,
-               *character_bitmaps[4][30],
+ALLEGRO_BITMAP *character_bitmaps[4][30],
                *current_char_bitmap[4];
 
 ALLEGRO_BITMAP  *tiles[25];
 ALLEGRO_DISPLAY *display;
 
-Rectange play_solo_bounds,
-          host_game_bounds,
-          join_game_bounds,
-          quit_game_bounds,
-          current_char_bounds[4];
+Rectange current_char_bounds[4];
 
 ALLEGRO_FONT *default_font;

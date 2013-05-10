@@ -34,7 +34,7 @@ typedef struct
     int32_t y;
     int32_t width;
     int32_t height;
-} Rectange;
+} Rectangle_ours;
 
 #define IS_WITHIN(rect__, x__, y__) \
     ((x__>=rect__.x)&&(x__<=(rect__.x+rect__.width)) && \
