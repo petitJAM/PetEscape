@@ -61,6 +61,7 @@ enum GameObjectType
 {
     BlockType = 0x00,
     PlayerType,
+    EnemyType,
     OtherType,
 
     // Add new types above this.

@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <float.h>
 #include "ObjectRenderer.h"
-#include "BlockMap.h"
 
 namespace petescape {
 namespace core {
@@ -47,7 +46,7 @@ public:
 
     inline void setRenderer( ObjectRenderer *obj ){ this->m_renderer = obj; }
 
-    void put_in_map( BlockMap *map  ){ this->m_the_map = map; }
+    //void put_in_map( BlockMap *map  ){ this->m_the_map = map; }
 
 protected:
     uint32_t        m_id;
@@ -75,7 +74,7 @@ protected:
     bool    m_use_accel;
     bool    m_use_vel;
 
-    BlockMap *m_the_map;
+    // BlockMap *m_the_map;
 };
 
 #define PLAYER_WALK_AMT 8
@@ -141,12 +140,24 @@ public:
 
     void update();
 
+
+// Movement Stuff
+    void start_move_left(){ this->m_vx = -PLAYER_WALK_AMT; this->m_facing = 0; }
+    void start_move_right(){ this->m_vx = PLAYER_WALK_AMT; this->m_facing = 1; }
+    void stop_moving(){ this->m_vx = 0; }
+    void start_jump();
+
+// Accessors
+    inline uint8_t get_facing(){ return this->m_facing; }
+    inline uint8_t get_walk_phase(){ return this->m_walk_phase; }
+
+// Mutators
+    inline void set_facing( uint8_t facing ){ this->m_facing = facing; }
+    inline void set_walk_phase( uint8_t walk_phase ){ this->m_walk_phase = walk_phase; }
+
 private:
     /*
-     * 0-11 = Walking
-     * 12   = Still
-     * 13   = Injured
-     * 14   = Attacking
+     * 0-3 = Walking
      */
     uint8_t m_walk_phase;
 
@@ -155,7 +166,6 @@ private:
      * 1 = Right
      */
     uint8_t m_facing;
-
     bool m_is_jumping;
 };
 

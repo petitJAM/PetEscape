@@ -18,43 +18,9 @@ const float MovementSpeed = 5.00;
 const float JumpInitVelocity = 60.00;
 
 enum MYKEYS {
-   KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT
+   KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A
 };
 
-typedef struct
-{
-    ALLEGRO_BITMAP *character_bitmaps[4][30];
-    ALLEGRO_BITMAP *current_char_bitmap[4];
-    Rectange current_char_bounds[4];
-    int32_t health;
-    int32_t damage;
-    bool is_dead;
-    int32_t dx;
-    int32_t dy;
-} Character;
-
-using namespace petescape::core;
-
-typedef std::pair< uint32_t, GameObject* > m_element;
-
-ALLEGRO_BITMAP *play_solo_bitmap,
-               *host_game_bitmap,
-               *join_game_bitmap,
-               *quit_game_bitmap,
-               *character_bitmaps[4][30],
-               *current_char_bitmap[4];
-
-ALLEGRO_BITMAP *tiles[25];
-
-Rectange play_solo_bounds,
-         host_game_bounds,
-         join_game_bounds,
-         quit_game_bounds,
-         current_char_bounds[4];
-
-Character current_player;
-
-
-ALLEGRO_FONT *default_font;
+// cut stuff
 
 #endif // CLIENT_RESOURCES_H

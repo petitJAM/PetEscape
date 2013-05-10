@@ -24,6 +24,20 @@ public:
     void render( GameObject * );
 };
 
+
+class EnemyRenderer : public ObjectRenderer
+{
+public:
+    EnemyRenderer( ALLEGRO_BITMAP *images[ 8 ] );
+
+    void render( GameObject * );
+
+private:
+    ALLEGRO_BITMAP *m_sprites[ 8 ];
+
+};
+
+
 class PlayerRenderer : public ObjectRenderer
 {
 public:
