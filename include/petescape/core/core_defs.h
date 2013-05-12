@@ -59,8 +59,9 @@ enum NewGameState
 
 enum GameObjectType
 {
-    BlockType = 0x00,
+    BlockType,
     PlayerType,
+    BulletType,
     OtherType,
 
     // Add new types above this.

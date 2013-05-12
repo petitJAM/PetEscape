@@ -102,18 +102,18 @@ void PlayerObject::start_jump()
         this->m_walk_phase = 3;
         this->m_is_jumping = true;
     }
-    else if (this->is_attacking && this->m_is_jumping)
-    {
-        this->m_vy = JUMP_VELOCITY / 4;
-        this->m_walk_phase = 3;
-        this->m_is_jumping = true;
-    }
+//    else if (!this->is_attacking && this->m_is_jumping)
+//    {
+//        this->m_vy = JUMP_VELOCITY / 4;
+//        this->m_walk_phase = 3;
+//        this->m_is_jumping = true;
+//    }
 }
 
 void PlayerObject::attack(){
     if (this->is_attacking == 0)
     {
-        this->is_attacking = 15;
+        this->is_attacking = 4;
     }
 }
 
@@ -239,18 +239,19 @@ end_col_check_y:
 
     if (this->is_hit)
         this->m_walk_phase = 13;
-    else if (this->is_attacking)
-    {
-        this->m_walk_phase=14;
-        this->is_attacking--;
-        printf("is_attacking %d\n", is_attacking);
-    }
     else if( this->m_is_jumping )
         this->m_walk_phase = 1;
     else if( !IS_ZERO( this->m_vx ) )
         this->m_walk_phase = ( this->m_walk_phase + 1 ) % 12;
     else
         this->m_walk_phase = 12;
+
+    if (this->is_attacking)
+    {
+        this->m_walk_phase=14;
+        this->is_attacking--;
+        printf("is_attacking %d\n", is_attacking);
+    }
 }
 
 void PlayerObject::start_move_left(){
@@ -276,6 +277,53 @@ void PlayerObject::start_move_right(){
         this->m_vx = 0;
     }
 }
+
+Bullet::Bullet( uint32_t id, uint8_t p_id, float x, float y, uint8_t facing ) :
+    GameObject( id )
+{
+    // Any Bullet specific values get set here
+    this->m_use_vel = true;
+    this->m_facing = facing;
+    this->m_width = 7;
+    this->m_height = 2;     //FIXME
+    this->p_id = p_id;
+
+    this->m_vx = 16;
+    this->m_vy = 0;
+
+    this->m_x = x;
+    this->m_y = y;
+}
+
+Bullet* Bullet::CreateBullet()
+{
+    static uint32_t n_id = 0;
+
+    return CreateBullet( n_id++, 0, 10, 10, 0 );
+}
+
+Bullet* Bullet::CreateBullet( uint32_t id, uint8_t p_id, float x, float y, uint8_t facing )
+{
+    Bullet *b = new Bullet( id, p_id, x, y, facing );
+
+    return b;
+}
+
+void Bullet::update()
+{
+    if( this->m_facing )
+    {
+        this->m_x += this->m_vx;
+        this->m_y += this->m_vy;
+    }
+    else
+    {
+        this->m_x -= this->m_vx;
+        this->m_y -= this->m_vy;
+    }
+}
+
+
 
 }
 }

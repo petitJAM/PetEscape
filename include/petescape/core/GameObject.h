@@ -31,7 +31,7 @@ public:
     inline const float &getAX() const { return m_ax; }
     inline const float &getAY() const { return m_ay; }
     inline const uint32_t &getWidth()  const { return m_width; }
-    inline const uint32_t &getHeigth() const { return m_height; }
+    inline const uint32_t &getHeight() const { return m_height; }
 
     inline const bool &hasAcceleration() const { return m_use_accel; }
     inline const bool &hasVelocity()     const { return m_use_vel;   }
@@ -104,7 +104,7 @@ public:
     void start_move_left();
     void start_move_right();
     void stop_moving(){ this->m_vx = 0; }
-    void get_hit(){ this->is_hit = 1; }
+    void start_hit(){ this->is_hit = 1; }
     void unhit(){ this->is_hit = 0; }
     void start_jump();
     void attack();
@@ -112,6 +112,8 @@ public:
 // Accessors
     inline uint8_t get_facing(){ return this->m_facing; }
     inline uint8_t get_walk_phase(){ return this->m_walk_phase; }
+    inline uint8_t get_attacking(){ return this->is_attacking; }
+    inline uint8_t get_is_hit(){ return this->is_hit; }
 
 // Mutators
     inline void set_facing( uint8_t facing ){ this->m_facing = facing; }
@@ -138,6 +140,26 @@ private:
 
     bool m_is_jumping;
 };
+
+
+class Bullet : public GameObject
+{
+    Bullet( uint32_t = 0, uint8_t = 0, float = 0, float = 0, uint8_t = 0 );
+
+public:
+    static Bullet* CreateBullet();
+    static Bullet* CreateBullet( uint32_t, uint8_t, float, float, uint8_t );
+
+    void update();
+
+    inline uint8_t      get_pid(){ return this->p_id; }
+    inline uint8_t      get_facing(){ return this->m_facing; }
+
+private:
+    uint8_t     p_id;
+    uint8_t     m_facing;
+};
+
 
 }
 }

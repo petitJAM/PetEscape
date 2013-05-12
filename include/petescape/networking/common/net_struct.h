@@ -43,6 +43,7 @@ struct MAP_DATA
 struct OBJECT_INFO
 {
     uint32_t    id;
+    uint8_t     p_id;
     uint32_t    x;
     uint32_t    y;
     uint16_t    type;

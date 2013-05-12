@@ -64,7 +64,9 @@ uint8_t                       enemy2facing;
 uint8_t                       enemy3state;
 uint8_t                       enemy3facing;
 
-uint8_t                           num_map_packets_recieved;
+uint32_t                      bullet_id = 0;
+
+uint8_t                       num_map_packets_recieved;
 char server_ip_address[ 20 ];
 }
 
@@ -165,7 +167,7 @@ class GameOps_
 public:
 
     void updateObject( const update_obj *data )
-    {        
+    {
         switch( data->type )
         {
         case PlayerType:
@@ -179,6 +181,17 @@ public:
                 players[ data->id ]->setY( data->y );
                 players[ data->id ]->set_facing( data->facing );
                 players[ data->id ]->set_walk_phase( data->walk_phase );
+            }
+        break;
+        case BulletType:
+            if( objs.count( data->id ) == 0 )
+            {
+                genObject( data );
+            }
+            else
+            {
+                objs[ data->id ]->setX( data->x );
+                objs[ data->id ]->setY( data->y );
             }
         break;
         case OtherType:
@@ -214,6 +227,13 @@ public:
             obj->setRenderer( new petescape::core::PlayerRenderer( character_bitmaps[ data->id ] ) );
             MESSAGE( "Done with new player" );
         break;
+        case BulletType:
+            MESSAGE( "Got BulletType" );
+            obj = Bullet::CreateBullet( data->id, data->p_id, data->x, data->y, data->facing );
+            objs[ data->id ] = obj;
+            obj->setRenderer( new petescape::core::PoorRenderer );
+            MESSAGE( "Completed BulletType");
+        break;
         case OtherType:
             obj = GameObject::CreateGameObject( data->id );
             objs[ data->id ] = obj;
@@ -238,6 +258,10 @@ public:
         {
         case PlayerType:
             players.erase( data->id );
+            break;
+
+        case BulletType:
+            objs.erase( data->id );
             break;
 
         case OtherType:
@@ -780,11 +804,32 @@ int c_main( int /*argc*/, char **argv )
 
                     if( key[ KEY_A ] )
                     {
-                        players[ client_id ]->attack();
+                        if( !players[ client_id ]->get_attacking() && !players[ client_id ]->get_is_hit() )
+                        {
+                            players[ client_id ]->attack();
+
+                            MESSAGE( "attacking!" );
+
+                            update_obj *newB = new update_obj();
+
+                            newB->id =      bullet_id++;
+                            newB->p_id =    client_id;
+                            newB->facing =  players[ client_id ]->get_facing();
+                            newB->x =       players[ client_id ]->getX() + 16;
+                            newB->y =       players[ client_id ]->getY() + 32;
+                            newB->type =    BulletType;
+
+                            GameOps.genObject( newB );
+                        }
                     }
 
                     players[ client_id ]->update();
                     ++counter;
+
+                    BOOST_FOREACH( m_element tmp, objs )
+                    {
+                        ((GameObject*)(tmp.second))->update();
+                    }
 
                     // ENEMY 1
                     if (current_enemy_bounds[0].x<-37||current_enemy_bounds[0].x>805){
@@ -820,19 +865,19 @@ int c_main( int /*argc*/, char **argv )
                                      current_enemy_bounds[0].x, current_enemy_bounds[0].y ) )
                     {
                         MESSAGE( "Collided 0" );
-                        players[ client_id ]->get_hit();
+                        players[ client_id ]->start_hit();
                     }
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[1].x, current_enemy_bounds[1].y ) )
                     {
                         MESSAGE( "Collided 1" );
-                        players[ client_id ]->get_hit();
+                        players[ client_id ]->start_hit();
                     }
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[2].x, current_enemy_bounds[2].y ) )
                     {
                         MESSAGE( "Collided 2" );
-                        players[ client_id ]->get_hit();
+                        players[ client_id ]->start_hit();
                     }
                     else
                     {
