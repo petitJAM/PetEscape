@@ -73,7 +73,7 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->m_width = 32;
     this->m_height = 60;                                        // FIXME
     this->m_is_jumping = false;
-
+    this->hitpoint = 100;
     this->is_attacking = 0;
 
     this->m_x = 64;

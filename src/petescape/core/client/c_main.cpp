@@ -664,7 +664,12 @@ void render_playing_state()
     al_draw_bitmap( current_enemy_bitmap[2], current_enemy_bounds[2].x , current_enemy_bounds[2].y, 0);
     enemy3state++;
 
-//    al_draw_bitmap( enemy1->current_enemy_bitmap, enemy1->current_enemy_bound.x, enemy1->current_enemy_bound.y, 0);
+    // HP bar
+
+    char HPstring[80];
+    sprintf(HPstring,"HP: %d",(players[client_id]->get_hitpoint()));
+
+    al_draw_text(default_font, al_map_rgb(221,6,178), 10,10,0,HPstring);
 }
 
 void render_pause_state()
@@ -678,6 +683,8 @@ bool check_collision(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2) {
 
 int c_main( int /*argc*/, char **argv )
 {
+
+    printf("Starting the application\n");
     Launcher *launcher = new Launcher();
 
     boost::asio::io_service::work work( client_io_service );
@@ -692,6 +699,7 @@ int c_main( int /*argc*/, char **argv )
     game_state = State_Welcome;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
 
+    printf("Setting up local Variables\n");
     try
     {
         bool should_exit = false;
@@ -704,7 +712,13 @@ int c_main( int /*argc*/, char **argv )
         }
 
         ALLEGRO_PATH *path = al_get_standard_path( ALLEGRO_RESOURCES_PATH );
+        if( path==nullptr )
+        {
+            MESSAGE( "CLIENT: Error Getting the path" );
+            return -1;
+        }
         al_change_directory( al_path_cstr( path, '/' ) );
+
 
         if(!al_install_keyboard()) {
             MESSAGE( "CLIENT: Error initializing Allegro keyboard driver." );
@@ -765,6 +779,7 @@ int c_main( int /*argc*/, char **argv )
 
         al_start_timer( timer );
 
+        printf("Starting While Loop\n");
         // Allegro Event loop.
         while( !should_exit )
         {
@@ -866,18 +881,34 @@ int c_main( int /*argc*/, char **argv )
                     {
                         MESSAGE( "Collided 0" );
                         players[ client_id ]->start_hit();
+                        uint32_t currentHp;
+                        currentHp=players[ client_id ]->get_hitpoint();
+                        currentHp--;
+                        players[ client_id ]->set_hitpoint(currentHp);
+
+
                     }
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[1].x, current_enemy_bounds[1].y ) )
                     {
                         MESSAGE( "Collided 1" );
                         players[ client_id ]->start_hit();
+                        players[ client_id ]->start_hit();
+                        uint32_t currentHp;
+                        currentHp=players[ client_id ]->get_hitpoint();
+                        currentHp--;
+                        players[ client_id ]->set_hitpoint(currentHp);
                     }
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[2].x, current_enemy_bounds[2].y ) )
                     {
                         MESSAGE( "Collided 2" );
                         players[ client_id ]->start_hit();
+                        players[ client_id ]->start_hit();
+                        uint32_t currentHp;
+                        currentHp=players[ client_id ]->get_hitpoint();
+                        currentHp--;
+                        players[ client_id ]->set_hitpoint(currentHp);
                     }
                     else
                     {

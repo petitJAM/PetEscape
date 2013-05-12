@@ -114,10 +114,12 @@ public:
     inline uint8_t get_walk_phase(){ return this->m_walk_phase; }
     inline uint8_t get_attacking(){ return this->is_attacking; }
     inline uint8_t get_is_hit(){ return this->is_hit; }
+    inline uint32_t get_hitpoint(){return this->hitpoint;}
 
 // Mutators
     inline void set_facing( uint8_t facing ){ this->m_facing = facing; }
     inline void set_walk_phase( uint8_t walk_phase ){ this->m_walk_phase = walk_phase; }
+    inline void set_hitpoint(uint32_t hitpoint){this->hitpoint = hitpoint;}
 
 private:
     /*
@@ -131,6 +133,7 @@ private:
     uint8_t is_hit;
 
     uint8_t is_attacking;
+    uint32_t hitpoint;
 
     /*
      * 0 = Left
