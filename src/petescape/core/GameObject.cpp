@@ -76,7 +76,7 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->hitpoint = 100;
     this->is_attacking = 0;
 
-    this->m_x = 64;
+    this->m_x = 400;
     this->m_y = 128;
 }
 
@@ -252,6 +252,8 @@ end_col_check_y:
         this->is_attacking--;
         printf("is_attacking %d\n", is_attacking);
     }
+
+    GLOBAL_RENDER_OFFSET += -this->m_vx;
 }
 
 void PlayerObject::start_move_left(){
