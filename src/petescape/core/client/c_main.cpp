@@ -67,6 +67,9 @@ uint8_t                       enemy3facing;
 uint32_t                      bullet_id = 0;
 
 uint8_t                       num_map_packets_recieved;
+uint32_t                      currentHp;
+
+
 char server_ip_address[ 20 ];
 }
 
@@ -881,10 +884,16 @@ int c_main( int /*argc*/, char **argv )
                     {
                         MESSAGE( "Collided 0" );
                         players[ client_id ]->start_hit();
-                        uint32_t currentHp;
                         currentHp=players[ client_id ]->get_hitpoint();
+                        if(currentHp>0){
                         currentHp--;
                         players[ client_id ]->set_hitpoint(currentHp);
+                        }
+                        else
+                        {
+                            players[ client_id ]->set_hitpoint(0);
+
+                        }
 
 
                     }
@@ -893,22 +902,34 @@ int c_main( int /*argc*/, char **argv )
                     {
                         MESSAGE( "Collided 1" );
                         players[ client_id ]->start_hit();
-                        players[ client_id ]->start_hit();
-                        uint32_t currentHp;
+//                        uint32_t currentHp;
                         currentHp=players[ client_id ]->get_hitpoint();
+                        if(currentHp>0){
                         currentHp--;
                         players[ client_id ]->set_hitpoint(currentHp);
+                        }
+                        else
+                        {
+                            players[ client_id ]->set_hitpoint(0);
+
+                        }
                     }
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[2].x, current_enemy_bounds[2].y ) )
                     {
                         MESSAGE( "Collided 2" );
                         players[ client_id ]->start_hit();
-                        players[ client_id ]->start_hit();
-                        uint32_t currentHp;
+//                        uint32_t currentHp;
                         currentHp=players[ client_id ]->get_hitpoint();
+                        if(currentHp>0){
                         currentHp--;
                         players[ client_id ]->set_hitpoint(currentHp);
+                        }
+                        else
+                        {
+                            players[ client_id ]->set_hitpoint(0);
+
+                        }
                     }
                     else
                     {
