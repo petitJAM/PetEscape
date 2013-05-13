@@ -215,8 +215,6 @@ public:
     {
         GameObject *obj = nullptr;
 
-        MESSAGE( "Creating object." );
-
         switch( data->type )
         {
         case PlayerType:
@@ -228,11 +226,9 @@ public:
             MESSAGE( "Done with new player" );
         break;
         case BulletType:
-            MESSAGE( "Got BulletType" );
             obj = Bullet::CreateBullet( data->id, data->p_id, data->x, data->y, data->facing );
             objs[ data->id ] = obj;
             obj->setRenderer( new petescape::core::PoorRenderer );
-            MESSAGE( "Completed BulletType");
         break;
         case OtherType:
             obj = GameObject::CreateGameObject( data->id );
@@ -624,16 +620,7 @@ void render_playing_state()
         ((GameObject*)(tmp.second))->render();
     }
 
-//    if (enemy1 = nullptr){
-//        printf("enemy not created");
-//        enemy1->type=0;
-//        enemy1->current_enemy_bitmap=enemy_bitmaps[enemy1->type][0];
-//        enemy1->current_enemy_bound.x=100;
-//        enemy1->current_enemy_bound.y = 100;
-//        enemy1->current_enemy_bound.width = 43;
-//        enemy1->current_enemy_bound.height = 64;
-//    }
-
+    // TODO move this into EnemyRenderer class
     // ENEMY 1
     if (enemy1facing%2==0){
         current_enemy_bitmap[0] = enemy_bitmaps[0][enemy1state%4];
@@ -823,17 +810,14 @@ int c_main( int /*argc*/, char **argv )
                         {
                             players[ client_id ]->attack();
 
-                            MESSAGE( "attacking!" );
-
+                            // add bullet
                             update_obj *newB = new update_obj();
-
-                            newB->id =      bullet_id++;
-                            newB->p_id =    client_id;
-                            newB->facing =  players[ client_id ]->get_facing();
-                            newB->x =       players[ client_id ]->getX() + 16;
-                            newB->y =       players[ client_id ]->getY() + 32;
-                            newB->type =    BulletType;
-
+                            newB->id        = bullet_id++;
+                            newB->p_id      = client_id;
+                            newB->facing    = players[ client_id ]->get_facing();
+                            newB->x         = players[ client_id ]->getX() + 16;
+                            newB->y         = players[ client_id ]->getY() + 32;
+                            newB->type      = BulletType;
                             GameOps.genObject( newB );
                         }
                     }
@@ -846,6 +830,8 @@ int c_main( int /*argc*/, char **argv )
                         ((GameObject*)(tmp.second))->update();
                     }
 
+                    // TODO this will be handled by update() in the above foreach
+                    // TODO use bounds of map, not screen
                     // ENEMY 1
                     if (current_enemy_bounds[0].x<-37||current_enemy_bounds[0].x>805){
                        enemy1facing++;
@@ -879,7 +865,6 @@ int c_main( int /*argc*/, char **argv )
                     if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[0].x, current_enemy_bounds[0].y ) )
                     {
-                        MESSAGE( "Collided 0" );
                         players[ client_id ]->start_hit();
                         uint32_t currentHp;
                         currentHp=players[ client_id ]->get_hitpoint();
@@ -891,7 +876,6 @@ int c_main( int /*argc*/, char **argv )
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[1].x, current_enemy_bounds[1].y ) )
                     {
-                        MESSAGE( "Collided 1" );
                         players[ client_id ]->start_hit();
                         players[ client_id ]->start_hit();
                         uint32_t currentHp;
@@ -902,7 +886,6 @@ int c_main( int /*argc*/, char **argv )
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[2].x, current_enemy_bounds[2].y ) )
                     {
-                        MESSAGE( "Collided 2" );
                         players[ client_id ]->start_hit();
                         players[ client_id ]->start_hit();
                         uint32_t currentHp;

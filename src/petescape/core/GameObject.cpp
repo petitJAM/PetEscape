@@ -250,7 +250,6 @@ end_col_check_y:
     {
         this->m_walk_phase=14;
         this->is_attacking--;
-        printf("is_attacking %d\n", is_attacking);
     }
 }
 
