@@ -133,7 +133,7 @@ private:
     uint8_t is_hit;
 
     uint8_t is_attacking;
-    uint32_t hitpoint;
+    uint32_t hitpoint;    
 
     /*
      * 0 = Left
