@@ -7,7 +7,7 @@
 namespace petescape {
 namespace core {
 
-GameObject::GameObject(uint32_t id) :
+GameObject::GameObject( uint32_t id ) :
     m_id( id )
 {
     this->m_x = 0;
@@ -78,6 +78,8 @@ PlayerObject::PlayerObject( uint32_t id ) :
 
     this->m_x = 64;
     this->m_y = 128;
+
+    this->m_type = PlayerType;
 }
 
 PlayerObject* PlayerObject::CreatePlayer()
@@ -277,6 +279,60 @@ void PlayerObject::start_move_right(){
     }
 }
 
+
+EnemyObject::EnemyObject( uint32_t id, float x, float y ) :
+    GameObject( id )
+{
+    // Any Enemy specific values get set here
+    this->m_use_accel = true;
+    this->m_use_vel = true;
+    this->m_ay = 2;
+    this->m_facing = 0;
+    this->m_walk_phase = 0;
+    this->m_width = 43;
+    this->m_height = 64; // FIXME
+    this->m_is_jumping = false;
+    this->is_attacking = 0;
+
+    this->m_vx = 10;
+    this->m_vy = 0;
+
+    this->m_x = x;
+    this->m_y = y;
+
+    this->m_type = EnemyType;
+}
+
+EnemyObject* EnemyObject::CreateEnemy()
+{
+    static uint32_t e_id = 0;
+
+    return CreateEnemy( e_id++, -100, -100 );
+}
+
+EnemyObject* EnemyObject::CreateEnemy( uint32_t id, float x, float y )
+{
+    EnemyObject *e = new EnemyObject( id, x, y );
+
+    return e;
+}
+
+void EnemyObject::update(){
+    if (m_facing%2 == 0)
+    {
+        m_x -= m_vx;
+        m_y -= m_vy;
+    }
+    else
+    {
+        m_x += m_vx;
+        m_y += m_vy;
+    }
+}
+
+
+
+
 Bullet::Bullet( uint32_t id, uint8_t p_id, float x, float y, uint8_t facing ) :
     GameObject( id )
 {
@@ -292,6 +348,8 @@ Bullet::Bullet( uint32_t id, uint8_t p_id, float x, float y, uint8_t facing ) :
 
     this->m_x = x;
     this->m_y = y;
+
+    this->m_type = BulletType;
 }
 
 Bullet* Bullet::CreateBullet()

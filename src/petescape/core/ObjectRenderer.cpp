@@ -67,4 +67,52 @@ void PlayerRenderer::render( GameObject* obj )
     }
 }
 
-}}
+void EnemyRenderer::render( GameObject* obj )
+{
+    EnemyObject *enemy = static_cast<EnemyObject*>( obj );
+
+    if( enemy != nullptr )
+    {
+        uint8_t index = 0;
+        uint8_t phase = enemy->get_walk_phase();
+
+        if( enemy->get_facing() == 1 )
+        {
+            // TODO FIXME
+//            if( phase == 12 )
+//                index = 0;
+//            else if( phase == 13 )
+//                index = 2;
+//            else if( phase == 14 )
+//                index = 4;
+//            else
+//                index = 6 + phase;
+        }
+        else
+        {
+//            if( phase == 12 )
+//                index = 1;
+//            else if( phase == 13 )
+//                index = 3;
+//            else if( phase == 14 )
+//                index = 5;
+//            else
+//                index = 29 - phase;
+        }
+
+        if( m_sprites[ index ] == nullptr )
+        {
+            MESSAGE( "Error accessing player sprite." );
+            return;
+        }
+
+        al_draw_bitmap( this->m_sprites[ index ],
+                        enemy->getX(),
+                        enemy->getY(),
+                        0 );
+    }
+}
+
+
+}
+}

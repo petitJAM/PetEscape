@@ -65,6 +65,7 @@ uint8_t                       enemy3state;
 uint8_t                       enemy3facing;
 
 uint32_t                      bullet_id = 0;
+uint32_t                      e_id      = 0;
 
 uint8_t                       num_map_packets_recieved;
 char server_ip_address[ 20 ];
@@ -183,6 +184,17 @@ public:
                 players[ data->id ]->set_walk_phase( data->walk_phase );
             }
         break;
+        case EnemyType:
+            if( objs.count( data->id ) == 0 )
+            {
+                genObject( data );
+            }
+            else
+            {
+                objs[ data->id ]->setX( data->x );
+                objs[ data->id ]->setY( data->y );
+            }
+        break;
         case BulletType:
             if( objs.count( data->id ) == 0 )
             {
@@ -225,6 +237,12 @@ public:
             obj->setRenderer( new petescape::core::PlayerRenderer( character_bitmaps[ data->id ] ) );
             MESSAGE( "Done with new player" );
         break;
+        case EnemyType:
+            obj = EnemyObject::CreateEnemy( data->id, data->x, data->y );
+            objs[ data->id ] = obj;
+            obj->setRenderer( new petescape::core::PoorRenderer ); // FIXME
+            //obj->setRenderer( new petescape::core::EnemyRenderer( enemy_bitmaps[ 0 ] ) ); // 0 would be data->enemy_type or something
+        break;
         case BulletType:
             obj = Bullet::CreateBullet( data->id, data->p_id, data->x, data->y, data->facing );
             objs[ data->id ] = obj;
@@ -255,6 +273,9 @@ public:
         case PlayerType:
             players.erase( data->id );
             break;
+
+        case EnemyType:
+            objs.erase( data->id );
 
         case BulletType:
             objs.erase( data->id );
@@ -766,6 +787,14 @@ int c_main( int /*argc*/, char **argv )
 
         al_start_timer( timer );
 
+        MESSAGE( "init enemies" );
+        update_obj *e1  = new update_obj();
+        e1->id          = e_id++;
+        e1->facing      = 1;
+        e1->x           = 800;
+        e1->y           = 480;
+
+
         printf("Starting While Loop\n");
         // Allegro Event loop.
         while( !should_exit )
@@ -828,6 +857,14 @@ int c_main( int /*argc*/, char **argv )
                     BOOST_FOREACH( m_element tmp, objs )
                     {
                         ((GameObject*)(tmp.second))->update();
+                        if( ((GameObject*)(tmp.second))->getType() == BulletType )
+                        {
+                            Bullet* current = (Bullet*)(tmp.second);
+                            if (current->getX() > MAP_LENGTH*32)
+                            {
+                                objs.erase(current->getID());
+                            }
+                        }
                     }
 
                     // TODO this will be handled by update() in the above foreach
@@ -871,7 +908,6 @@ int c_main( int /*argc*/, char **argv )
                         currentHp--;
                         players[ client_id ]->set_hitpoint(currentHp);
 
-
                     }
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[1].x, current_enemy_bounds[1].y ) )
@@ -898,6 +934,30 @@ int c_main( int /*argc*/, char **argv )
                         players[ client_id ]->unhit();
                     }
 
+                    // Write out everything in objs
+                    BOOST_FOREACH( m_element tmp, objs )
+                    {
+                        GameObject* current = (GameObject*)tmp.second;
+                        packet_list packet;
+
+                        if( current->getType() == EnemyType )
+                        {
+                            MESSAGE( "update enemy" );
+//                            packet.o_update.id = current->getID();
+//                            packet.o_update.type = current->getType();
+                        }
+                        else if( current->getType() == BulletType )
+                        {
+                            packet.o_update.id = current->getID();
+                            packet.o_update.p_id = ((Bullet*)current)->get_pid();
+                            packet.o_update.x = current->getX();
+                            packet.o_update.y = current->getY();
+                            packet.o_update.type = current->getType();
+                            packet.o_update.facing = ((Bullet*)current)->get_facing();
+
+                            NetOps.async_write( packet, O_UPDATE );
+                        }
+                    }
 
 
                     // For now throw a packet out every frame. Not laggy at all.

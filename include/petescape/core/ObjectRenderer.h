@@ -36,6 +36,17 @@ private:
 
 };
 
+class EnemyRenderer : public ObjectRenderer
+{
+public:
+    EnemyRenderer( ALLEGRO_BITMAP *images[ 30 ] );
+
+    void render( GameObject * );
+
+private:
+    ALLEGRO_BITMAP *m_sprites[ 30 ];
+};
+
 }}
 
 #endif // OBJECTRENDERER_H

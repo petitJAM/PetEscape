@@ -36,7 +36,8 @@ public:
     inline const bool &hasAcceleration() const { return m_use_accel; }
     inline const bool &hasVelocity()     const { return m_use_vel;   }
 
-    inline const uint32_t &getID() const { return m_id; }
+    inline const uint32_t       &getID() const { return m_id; }
+    inline const GameObjectType &getType() const { return m_type; }
 
     static GameObject* CreateGameObject( );
     static GameObject* CreateGameObject( uint32_t );
@@ -74,6 +75,9 @@ protected:
     // location updates by itself
     bool    m_use_accel;
     bool    m_use_vel;
+
+    // What kind of object
+    GameObjectType m_type;
 
     BlockMap *m_the_map;
 };
@@ -145,6 +149,31 @@ private:
 };
 
 
+class EnemyObject : public GameObject
+{
+    EnemyObject( uint32_t = 0, float = -100, float = -100 );
+
+public:
+    static EnemyObject* CreateEnemy();
+    static EnemyObject* CreateEnemy( uint32_t, float, float );
+
+    void update();
+
+    inline uint8_t get_walk_phase(){ return this->m_walk_phase; }
+    inline uint8_t get_facing(){ return this->m_facing; }
+
+private:
+    uint8_t     m_walk_phase;
+    uint8_t     is_hit;
+
+    uint32_t    hitpoint;
+
+    uint8_t     is_attacking;
+    uint8_t     m_facing;
+    bool        m_is_jumping;
+};
+
+
 class Bullet : public GameObject
 {
     Bullet( uint32_t = 0, uint8_t = 0, float = 0, float = 0, uint8_t = 0 );
@@ -158,8 +187,11 @@ public:
     inline uint8_t      get_pid(){ return this->p_id; }
     inline uint8_t      get_facing(){ return this->m_facing; }
 
+
 private:
+    // who shot this bullet?
     uint8_t     p_id;
+    // direction
     uint8_t     m_facing;
 };
 
