@@ -11,7 +11,7 @@ void PoorRenderer::render( GameObject* obj )
 {
     for( uint32_t i = 0; i < obj->getWidth(); ++i )
         for( uint32_t j = 0; j < obj->getHeight(); ++j )
-            al_draw_pixel( obj->getX() + i,
+            al_draw_pixel( obj->getX() + i + GLOBAL_RENDER_OFFSET,
                            obj->getY() + j,
                            al_map_rgb( 0, 0, 0 ) );
 }
@@ -61,7 +61,7 @@ void PlayerRenderer::render( GameObject* obj )
         }
 
         al_draw_bitmap( this->m_sprites[ index ],
-                        player->getX(),
+                        400, //player->getX(),
                         player->getY(),
                         0 );
     }

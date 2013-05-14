@@ -17,6 +17,8 @@
 
 #define MAX_CONNECTIONS 4
 
+extern float GLOBAL_RENDER_OFFSET;
+
 #include <iostream>
 #include <stdint.h>
 

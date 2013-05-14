@@ -76,7 +76,7 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->hitpoint = 100;
     this->is_attacking = 0;
 
-    this->m_x = 64;
+    this->m_x = 400;
     this->m_y = 128;
 
     this->m_type = PlayerType;
@@ -253,6 +253,8 @@ end_col_check_y:
         this->m_walk_phase=14;
         this->is_attacking--;
     }
+
+    GLOBAL_RENDER_OFFSET += -this->m_vx;
 }
 
 void PlayerObject::start_move_left(){

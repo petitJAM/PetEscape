@@ -1,3 +1,6 @@
+
+float GLOBAL_RENDER_OFFSET;
+
 #include <iostream>
 #include "petescape/core/client/client.h"
 #include "petescape/core/client/client_resources.h"
@@ -23,6 +26,7 @@
 
 #include <map>
 #include <cstdlib>
+
 
 namespace petescape {
 namespace core {
@@ -625,7 +629,10 @@ void render_playing_state()
         {
             if( block_map->getBlock( i, j ).getBlockType() )
             {
-                al_draw_bitmap( tiles[ block_map->getBlock( i, j ).getBlockType() - 1 ], i * 32, j * 32, 0 );
+                al_draw_bitmap( tiles[ block_map->getBlock( i, j ).getBlockType() - 1 ],
+                        i * 32 + GLOBAL_RENDER_OFFSET,
+                        j * 32,
+                        0 );
             }
         }
     }
@@ -649,7 +656,7 @@ void render_playing_state()
         current_enemy_bitmap[0] = enemy_bitmaps[0][enemy1state%4+4];
     }
 
-    al_draw_bitmap( current_enemy_bitmap[0], current_enemy_bounds[0].x , current_enemy_bounds[0].y, 0);
+    al_draw_bitmap( current_enemy_bitmap[0], current_enemy_bounds[0].x + GLOBAL_RENDER_OFFSET, current_enemy_bounds[0].y, 0);
     enemy1state++;
 
     // ENEMY 2
@@ -659,7 +666,7 @@ void render_playing_state()
         current_enemy_bitmap[1] = enemy_bitmaps[1][enemy2state%4+4];
     }
 
-    al_draw_bitmap( current_enemy_bitmap[1], current_enemy_bounds[1].x , current_enemy_bounds[1].y, 0);
+    al_draw_bitmap( current_enemy_bitmap[1], current_enemy_bounds[1].x + GLOBAL_RENDER_OFFSET, current_enemy_bounds[1].y, 0);
     enemy2state++;
 
     // ENEMY 3
@@ -669,7 +676,7 @@ void render_playing_state()
         current_enemy_bitmap[2] = enemy_bitmaps[2][enemy3state%4+4];
     }
 
-    al_draw_bitmap( current_enemy_bitmap[2], current_enemy_bounds[2].x , current_enemy_bounds[2].y, 0);
+    al_draw_bitmap( current_enemy_bitmap[2], current_enemy_bounds[2].x + GLOBAL_RENDER_OFFSET, current_enemy_bounds[2].y, 0);
     enemy3state++;
 
     // HP bar
@@ -706,6 +713,7 @@ int c_main( int /*argc*/, char **argv )
 
     game_state = State_Welcome;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
+    GLOBAL_RENDER_OFFSET = 0;
 
     printf("Setting up local Variables\n");
     try
@@ -839,7 +847,6 @@ int c_main( int /*argc*/, char **argv )
                         {
                             players[ client_id ]->attack();
 
-                            // add bullet
                             update_obj *newB = new update_obj();
                             newB->id        = bullet_id++;
                             newB->p_id      = client_id;
@@ -848,6 +855,9 @@ int c_main( int /*argc*/, char **argv )
                             newB->y         = players[ client_id ]->getY() + 32;
                             newB->type      = BulletType;
                             GameOps.genObject( newB );
+
+                            // TODO: Write it to the server, delete newB
+
                         }
                     }
 
