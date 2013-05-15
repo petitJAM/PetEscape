@@ -170,7 +170,7 @@ public:
 
     inline void set_facing( uint8_t facing ){ this->m_facing = facing; }
     inline void set_walk_phase( uint8_t walk_phase ){ this->m_walk_phase = walk_phase; }
-    inline void set_enemy_type(uint16_t type){ this->e_type = type; }
+    //inline void set_enemy_type(uint16_t type){ this->e_type = type; }
 
     inline uint8_t get_walk_phase(){ return this->m_walk_phase; }
     inline uint8_t get_facing(){ return this->m_facing; }

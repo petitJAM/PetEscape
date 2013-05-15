@@ -250,6 +250,7 @@ public:
                     //enemies[ 0 ] = EnemyObject::CreateEnemy(0, (rand() % (32 * (MAP_LENGTH - 2))) + 32, 480, SlowType);
 
                     int n_enemies = (rand() % 10) + 10;
+                    //n_enemies = 2;
                     for(int i = 0; i < n_enemies; i++){
                         int enemyType = rand() % 3;
                         int spawnPoint = (rand() % (32 * (MAP_LENGTH - 2))) + 32;
@@ -257,27 +258,9 @@ public:
                         //EnemyObject* enemy = EnemyObject::CreateEnemy();
                         enemies[ enemy->getID() ] = enemy;
 
-                        std::cout << "put in map\n";
-                        //enemies[ enemy->getID() ]->put_in_map( bmap );
+                        enemies[ enemy->getID() ]->put_in_map( bmap );
                     }
                 }
-
-/*
-                srand( time( nullptr ));
-
-                int n_enemies = rand() % (MAP_LENGTH / 20 - 10) + 10;
-                for(int i = 0; i < n_enemies; i++){
-                    int enemyType = rand() % 3;
-                    EnemyObject* enemy;
-                    if( enemyType == 0 )
-                        enemy = EnemyObject::CreateEnemy(i, rand() % MAP_LENGTH, 480, SlowType);
-                    else if( enemyType == 1 )
-                        enemy = EnemyObject::CreateEnemy(i, rand() % MAP_LENGTH, 480, AverageType);
-                    else
-                        enemy = EnemyObject::CreateEnemy(i, rand() % MAP_LENGTH, 480, FastType);
-                    enemies[ enemy->getID() ] = enemy;
-                }
-                */
             }
 
             new_packet.s_map_header.stage_length = map_length;
@@ -331,7 +314,7 @@ public:
                 MESSAGE( "SERVER: Sending O_UPDATE" );
                 NetworkOps.async_write( packet->head.sender_id, new_packet, O_UPDATE );
             }
-
+            /*
             BOOST_FOREACH( map_element i, enemies)
             {
                 EnemyObject* current = (EnemyObject*)i.second;
@@ -343,6 +326,7 @@ public:
                 MESSAGE( "SERVER: Sending E_UPDATE" );
                 NetworkOps.async_write( packet->head.sender_id, new_packet, E_UPDATE );
             }
+            */
 
             al_rest( 1 );
 
@@ -412,10 +396,12 @@ public:
                 new_packet.e_update.facing = enemy->get_facing();
                 new_packet.e_update.walk_phase = enemy->get_walk_phase();
 
-//                std::cerr << enemy->getID() << " " << enemy->getX() << " " << enemy->getY() << " " << enemy->get_enemy_type() << std::endl;
 
-
-                NetworkOps.async_write( packet->head.sender_id, new_packet, E_UPDATE );
+                BOOST_FOREACH( map_element i, players)
+                {
+                    std::cerr << (int)((PlayerObject*)i.second)->getID() << std::endl;
+                    NetworkOps.async_write( ((PlayerObject*)i.second)->getID(), new_packet, E_UPDATE );
+                }
 
             }
             //std::cerr << "Server: Ended E_UPDATE" << std::endl;
@@ -631,12 +617,16 @@ int s_main( int /*argc*/, char ** /*argv*/ )
                     // push obj info to client with ID = update_id
                 }
 
-/*
-                BOOST_FOREACH( map_element i, enemies)
-                {
-                    std::cout << "Updating\n";
-                    ((EnemyObject*)i.second)->update();
-                }*/
+
+                //keep going until all players are connected.
+                if(players.size() == MAX_CONNECTIONS){
+                    BOOST_FOREACH( map_element i, enemies)
+                    {
+                        EnemyObject* enemy = ((EnemyObject*)(i.second));
+                        enemy->update();
+                    }
+                }
+
 
                 ++loop_counter;
 

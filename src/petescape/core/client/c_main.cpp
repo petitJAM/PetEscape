@@ -190,9 +190,9 @@ public:
             }
             else
             {
+                //enemies don't update
                 enemies[ data-> id ]->setX( data->x );
                 enemies[ data-> id ]->setY( data->y );
-                enemies[ data-> id ]->set_enemy_type( data->second_type);
                 enemies[ data-> id ]->set_facing( data->facing );
                 enemies[ data-> id ]->set_walk_phase( data->walk_phase );
             }
@@ -660,8 +660,8 @@ void render_playing_state()
     BOOST_FOREACH( m_element tmp, enemies )
     {
         EnemyObject* enemy = ((EnemyObject*)(tmp.second));
-        std::cerr << (int)enemy->getID() << " " << enemy->getX() << " " << enemy->getY() << " " << enemy->get_enemy_type() << std::endl;
-        ((EnemyObject*)(tmp.second))->render();
+        std::cerr << (int)enemy->getID() << " " <<(int)enemy->getX() << std::endl;
+        enemy->render();
     }
 
     BOOST_FOREACH( m_element tmp, players )
