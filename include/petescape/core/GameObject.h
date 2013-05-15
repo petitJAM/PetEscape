@@ -129,7 +129,7 @@ public:
     inline void set_walk_phase( uint8_t walk_phase ){ this->m_walk_phase = walk_phase; }
     inline void set_hitpoint(uint32_t hitpoint){this->hitpoint = hitpoint;}
     inline void set_is_dead(){this->is_dead = true;}
-    inline void set_rebirth(){this->is_dead = false; this->hitpoint=100;}
+    inline void set_rebirth(){this->is_dead = false; this->hitpoint=100; this->m_x = 400; this->m_y = 480; GLOBAL_RENDER_OFFSET = 0;}
 
 
 private:

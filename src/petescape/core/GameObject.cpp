@@ -78,7 +78,7 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->is_dead = false;
 
     this->m_x = 400;
-    this->m_y = 400;
+    this->m_y = 480;
 
     this->m_type = PlayerType;
 }
