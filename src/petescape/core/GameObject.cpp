@@ -338,7 +338,7 @@ EnemyObject* EnemyObject::CreateEnemy( uint32_t id, float x, float y, uint16_t t
 
 void EnemyObject::update(){
     //std::cerr << this->getID() << " " << this->getX() << " " << this->getY() << " " << this->get_enemy_type() << std::endl;
-    int speed_mult = e_type + 1;
+    int speed_mult = (e_type % 3) + 1;
 
     int h13 = m_height / 3; // height / 3
     int h23 = h13 * 2; // 2*height / 3
