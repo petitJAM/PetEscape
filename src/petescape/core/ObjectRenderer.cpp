@@ -29,7 +29,6 @@ void PlayerRenderer::render( GameObject* obj )
     if( player != nullptr )
     {
         uint8_t index = 0;
-        std::cerr << "Walk phase for " << (int)player->getID() << ": " << (int)player->get_walk_phase() << std::endl;
         uint8_t phase = player->get_walk_phase();
 
         if(phase==15){
