@@ -27,24 +27,24 @@ public:
 class PlayerRenderer : public ObjectRenderer
 {
 public:
-    PlayerRenderer( ALLEGRO_BITMAP *images[ 30 ] );
+    PlayerRenderer( ALLEGRO_BITMAP *images[ 31 ] );
 
     void render( GameObject * );
 
 private:
-    ALLEGRO_BITMAP *m_sprites[ 30 ];
+    ALLEGRO_BITMAP *m_sprites[ 31 ];
 
 };
 
 class EnemyRenderer : public ObjectRenderer
 {
 public:
-    EnemyRenderer( ALLEGRO_BITMAP *images[ 30 ] );
+    EnemyRenderer( ALLEGRO_BITMAP *images[ 8 ] );
 
     void render( GameObject * );
 
 private:
-    ALLEGRO_BITMAP *m_sprites[ 30 ];
+    ALLEGRO_BITMAP *m_sprites[ 8 ];
 };
 
 }}

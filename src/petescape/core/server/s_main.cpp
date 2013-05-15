@@ -3,6 +3,7 @@
 #include "petescape/core/core_defs.h"
 #include "petescape/networking/common/net_struct.h"
 #include "petescape/core/GameMap.h"
+#include "petescape/core/BlockMap.h"
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
@@ -34,11 +35,13 @@ network_packet  waiting_packets[ MAX_CONNECTIONS ];
 bool            expecting_error_on_client[ MAX_CONNECTIONS ];
 
 GameMap *map;
+BlockMap *bmap;
 uint8_t  map_length;
 uint8_t  map_height;
 
 std::map<uint32_t, GameObject *>   objs;
 std::map<uint32_t, PlayerObject *> players;
+std::map<uint32_t, EnemyObject *> enemies;
 
 time_t pressed_keys[MAX_CONNECTIONS][TOTAL_SUPPORTED_KEYS];
 bool players_ducking[MAX_CONNECTIONS];
@@ -176,9 +179,10 @@ namespace {
 NetworkOps_ NetworkOps;
 }
 
+typedef std::pair<uint32_t, GameObject*> map_element;
+
 class ServerOps_
 {
-    typedef std::pair<uint32_t, GameObject*> map_element;
 
 public:
 
@@ -235,7 +239,45 @@ public:
                 map_length = MAP_LENGTH;
                 map_height = MAP_HEIGHT;
                 map = new GameMap( map_height, map_length );
-                map->generate();
+
+                //if no existing map..
+                if(!map->isGenerated()){
+
+                    map->generate();
+                    bmap = new BlockMap( *map );
+
+                    srand( time( nullptr ));
+                    //enemies[ 0 ] = EnemyObject::CreateEnemy(0, (rand() % (32 * (MAP_LENGTH - 2))) + 32, 480, SlowType);
+
+                    int n_enemies = (rand() % 10) + 10;
+                    for(int i = 0; i < n_enemies; i++){
+                        int enemyType = rand() % 3;
+                        int spawnPoint = (rand() % (32 * (MAP_LENGTH - 2))) + 32;
+                        EnemyObject* enemy = EnemyObject::CreateEnemy(i, spawnPoint, 480, enemyType);
+                        //EnemyObject* enemy = EnemyObject::CreateEnemy();
+                        enemies[ enemy->getID() ] = enemy;
+
+                        std::cout << "put in map\n";
+                        //enemies[ enemy->getID() ]->put_in_map( bmap );
+                    }
+                }
+
+/*
+                srand( time( nullptr ));
+
+                int n_enemies = rand() % (MAP_LENGTH / 20 - 10) + 10;
+                for(int i = 0; i < n_enemies; i++){
+                    int enemyType = rand() % 3;
+                    EnemyObject* enemy;
+                    if( enemyType == 0 )
+                        enemy = EnemyObject::CreateEnemy(i, rand() % MAP_LENGTH, 480, SlowType);
+                    else if( enemyType == 1 )
+                        enemy = EnemyObject::CreateEnemy(i, rand() % MAP_LENGTH, 480, AverageType);
+                    else
+                        enemy = EnemyObject::CreateEnemy(i, rand() % MAP_LENGTH, 480, FastType);
+                    enemies[ enemy->getID() ] = enemy;
+                }
+                */
             }
 
             new_packet.s_map_header.stage_length = map_length;
@@ -275,14 +317,8 @@ public:
             BOOST_FOREACH( map_element i, objs )
             {
                 GameObject* current = (GameObject*)i.second;
-                if ( current->getType() == EnemyType )
-                {
-                    new_packet.o_update.id   = current->getID();
-                    new_packet.o_update.type = (uint16_t)EnemyType;
-                    new_packet.o_update.x    = (uint32_t)current->getX();
-                    new_packet.o_update.y    = (uint32_t)current->getY();
-                }
-                else if ( current->getType() == BulletType )
+
+                if ( current->getType() == BulletType )
                 {
                     new_packet.o_update.id     = current->getID();
                     new_packet.o_update.p_id   = ((Bullet*)current)->get_pid();
@@ -294,6 +330,18 @@ public:
 
                 MESSAGE( "SERVER: Sending O_UPDATE" );
                 NetworkOps.async_write( packet->head.sender_id, new_packet, O_UPDATE );
+            }
+
+            BOOST_FOREACH( map_element i, enemies)
+            {
+                EnemyObject* current = (EnemyObject*)i.second;
+                new_packet.e_update.id   = current->getID();
+                new_packet.e_update.type = (uint16_t)EnemyType;
+                new_packet.e_update.x    = (uint32_t)current->getX();
+                new_packet.e_update.y    = (uint32_t)current->getY();
+
+                MESSAGE( "SERVER: Sending E_UPDATE" );
+                NetworkOps.async_write( packet->head.sender_id, new_packet, E_UPDATE );
             }
 
             al_rest( 1 );
@@ -331,6 +379,8 @@ public:
 
             break;
             case EnemyType:
+                std::cerr << "Enemy" << std::endl;
+
             break;
             case BulletType:
                 if( objs.count( packet->data.o_update.id ) == 0 )
@@ -346,6 +396,29 @@ public:
             break;
             }
 
+        } break;
+
+        case E_UPDATE:
+        {
+            //std::cerr << "Server: Made it inside of E_Update" << std::endl;
+            BOOST_FOREACH( map_element i, enemies )
+            {
+                EnemyObject* enemy = ((EnemyObject*)(i.second));
+                new_packet.e_update.id   = enemy->getID();
+                new_packet.e_update.type = (uint16_t)EnemyType;
+                new_packet.e_update.second_type = enemy->get_enemy_type();
+                new_packet.e_update.x    = enemy->getX();
+                new_packet.e_update.y    = enemy->getY();
+                new_packet.e_update.facing = enemy->get_facing();
+                new_packet.e_update.walk_phase = enemy->get_walk_phase();
+
+//                std::cerr << enemy->getID() << " " << enemy->getX() << " " << enemy->getY() << " " << enemy->get_enemy_type() << std::endl;
+
+
+                NetworkOps.async_write( packet->head.sender_id, new_packet, E_UPDATE );
+
+            }
+            //std::cerr << "Server: Ended E_UPDATE" << std::endl;
         } break;
 
 /*
@@ -519,7 +592,7 @@ int s_main( int /*argc*/, char ** /*argv*/ )
             return -2;
         }
 
-        if( !( logic_timer = al_create_timer( 1.0 / 30.0 ) ) )
+        if( !( logic_timer = al_create_timer( 1.0 / 15.0 ) ) )
         {
             MESSAGE( "Unable to create Allegro Timer." );
             return -3;
@@ -557,6 +630,14 @@ int s_main( int /*argc*/, char ** /*argv*/ )
                 {
                     // push obj info to client with ID = update_id
                 }
+
+/*
+                BOOST_FOREACH( map_element i, enemies)
+                {
+                    std::cout << "Updating\n";
+                    ((EnemyObject*)i.second)->update();
+                }*/
+
                 ++loop_counter;
 
             } break;

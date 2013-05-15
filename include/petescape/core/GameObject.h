@@ -9,6 +9,8 @@
 namespace petescape {
 namespace core {
 
+bool checkXCollisionWithBlock(BlockMap* map, int new_x1, int new_x2, int new_x3, int y, int h);
+
 class GameObject
 {
 protected:
@@ -49,6 +51,7 @@ public:
     inline void setRenderer( ObjectRenderer *obj ){ this->m_renderer = obj; }
 
     void put_in_map( BlockMap *map  ){ this->m_the_map = map; }
+    BlockMap* get_the_map(){ return this->m_the_map; }
 
 protected:
     uint32_t        m_id;
@@ -78,6 +81,7 @@ protected:
 
     // What kind of object
     GameObjectType m_type;
+    uint16_t e_type;
 
     BlockMap *m_the_map;
 };
@@ -156,24 +160,39 @@ private:
 
 class EnemyObject : public GameObject
 {
-    EnemyObject( uint32_t = 0, float = -100, float = -100 );
+    EnemyObject( uint32_t = 0, float = -100, float = -100, uint16_t =  0 );
 
 public:
     static EnemyObject* CreateEnemy();
-    static EnemyObject* CreateEnemy( uint32_t, float, float );
+    static EnemyObject* CreateEnemy( uint32_t, float, float, uint16_t );
 
     void update();
 
+    inline void set_facing( uint8_t facing ){ this->m_facing = facing; }
+    inline void set_walk_phase( uint8_t walk_phase ){ this->m_walk_phase = walk_phase; }
+    inline void set_enemy_type(uint16_t type){ this->e_type = type; }
+
     inline uint8_t get_walk_phase(){ return this->m_walk_phase; }
     inline uint8_t get_facing(){ return this->m_facing; }
+    inline uint16_t get_enemy_type(){ return this->e_type; }
 
 private:
+    /*
+     * 0-2 = Walking
+     * 3   = Still
+     *
+     */
     uint8_t     m_walk_phase;
     uint8_t     is_hit;
 
     uint32_t    hitpoint;
 
     uint8_t     is_attacking;
+
+    /*
+     * 0 = Left
+     * 1 = Right
+     */
     uint8_t     m_facing;
     bool        m_is_jumping;
 };

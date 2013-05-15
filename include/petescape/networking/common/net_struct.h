@@ -47,6 +47,7 @@ struct OBJECT_INFO
     uint32_t    x;
     uint32_t    y;
     uint16_t    type;
+    uint16_t    second_type;
     uint8_t     action;
     uint8_t     facing;
     uint8_t     walk_phase;
@@ -115,7 +116,8 @@ typedef enum PACKET_ID
     S_SENT_MAP,
     S_SENT_OBJS,
     O_UPDATE,
-    O_DESTORY
+    O_DESTORY,
+    E_UPDATE
 } packet_id;
 
 typedef union PACKET_LIST
@@ -130,6 +132,7 @@ typedef union PACKET_LIST
     map_header          s_map_header;
     map_data            s_map_data;
     update_obj          o_update;
+    update_obj          e_update;
     destroy_obj         o_destroy;
 } packet_list;
 

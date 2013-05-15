@@ -3,7 +3,7 @@
 
 //#define MAP_LENGTH 100
 //#define MAP_HEIGHT 40
-#define MAP_LENGTH 200
+#define MAP_LENGTH 100
 #define MAP_HEIGHT 19
 
 #define KEY_UP_INDEX 0

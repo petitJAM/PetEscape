@@ -70,6 +70,12 @@ void PlayerRenderer::render( GameObject* obj )
     }
 }
 
+EnemyRenderer::EnemyRenderer( ALLEGRO_BITMAP *images[] )
+{
+    for( int i = 0; i < 8; ++i )
+        this->m_sprites[ i ] = images[ i ];
+}
+
 void EnemyRenderer::render( GameObject* obj )
 {
     EnemyObject *enemy = static_cast<EnemyObject*>( obj );
@@ -79,28 +85,24 @@ void EnemyRenderer::render( GameObject* obj )
         uint8_t index = 0;
         uint8_t phase = enemy->get_walk_phase();
 
-        if( enemy->get_facing() == 1 )
+
+        /*
+         * 0-2 = Walking
+         * 3   = Still
+         */
+        if( enemy->get_facing() == 0 )
         {
-            // TODO FIXME
-//            if( phase == 12 )
-//                index = 0;
-//            else if( phase == 13 )
-//                index = 2;
-//            else if( phase == 14 )
-//                index = 4;
-//            else
-//                index = 6 + phase;
+            if( phase == 3 )
+                index = 0;
+            else
+                index = 1 + phase;
         }
         else
         {
-//            if( phase == 12 )
-//                index = 1;
-//            else if( phase == 13 )
-//                index = 3;
-//            else if( phase == 14 )
-//                index = 5;
-//            else
-//                index = 29 - phase;
+            if( phase == 3 )
+                index = 4;
+            else
+                index = 5 + phase;
         }
 
         if( m_sprites[ index ] == nullptr )
@@ -110,7 +112,7 @@ void EnemyRenderer::render( GameObject* obj )
         }
 
         al_draw_bitmap( this->m_sprites[ index ],
-                        enemy->getX(),
+                        enemy->getX() + GLOBAL_RENDER_OFFSET,
                         enemy->getY(),
                         0 );
     }

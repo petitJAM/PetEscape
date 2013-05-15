@@ -78,7 +78,7 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->is_dead = false;
 
     this->m_x = 400;
-    this->m_y = 128;
+    this->m_y = 400;
 
     this->m_type = PlayerType;
 }
@@ -294,7 +294,7 @@ void PlayerObject::start_move_right(){
 }
 
 
-EnemyObject::EnemyObject( uint32_t id, float x, float y ) :
+EnemyObject::EnemyObject( uint32_t id, float x, float y, uint16_t type) :
     GameObject( id )
 {
     // Any Enemy specific values get set here
@@ -308,44 +308,100 @@ EnemyObject::EnemyObject( uint32_t id, float x, float y ) :
     this->m_is_jumping = false;
     this->is_attacking = 0;
 
-    this->m_vx = 10;
+    this->m_vx = 5;
     this->m_vy = 0;
 
     this->m_x = x;
     this->m_y = y;
 
     this->m_type = EnemyType;
+    this->e_type = type;
 }
 
 EnemyObject* EnemyObject::CreateEnemy()
 {
     static uint32_t e_id = 0;
 
-    return CreateEnemy( e_id++, -100, -100 );
+    srand( time( nullptr ) );
+    int temp = rand();
+    int spawnPoint = (temp % (32 * (MAP_LENGTH - 2))) + 32;
+    return CreateEnemy( e_id++, spawnPoint, 480, temp % 3);
+
 }
 
-EnemyObject* EnemyObject::CreateEnemy( uint32_t id, float x, float y )
+EnemyObject* EnemyObject::CreateEnemy( uint32_t id, float x, float y, uint16_t type)
 {
-    EnemyObject *e = new EnemyObject( id, x, y );
+    EnemyObject *e = new EnemyObject( id, x, y, type );
 
     return e;
 }
 
 void EnemyObject::update(){
-    if (m_facing%2 == 0)
+    //std::cerr << this->getID() << " " << this->getX() << " " << this->getY() << " " << this->get_enemy_type() << std::endl;
+    int speed_mult = e_type + 1;
+
+    int h13 = m_height / 3; // height / 3
+    int h23 = h13 * 2; // 2*height / 3
+    // do collision detection.
+    float new_x1 = m_x + m_vx + m_ax;
+    float new_x2 = m_x + m_vx + m_ax + m_width / 2;
+    float new_x3 = m_x + m_vx + m_ax + m_width;
+
+    bool x_collision = true;
+
+    for( uint32_t i = 0; i < m_the_map->getLength(); ++i )
     {
-        m_x -= m_vx;
-        m_y -= m_vy;
+        for( uint32_t j = 0; j < m_the_map->getHeight(); ++j )
+        {
+            if( m_the_map->getBlock( i, j ).getBlockType() != 0 )
+            {
+                if( CONTAINS( new_x1, m_y            , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x1, m_y + h13      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x1, m_y + h23      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x1, m_y + m_height , i*32, j*32, i*32+32, j*32+32 ) )
+                {
+                    m_x = i * 32 + m_width;
+                    goto end_col_check_x_for_enemies;
+                }
+
+                if( CONTAINS( new_x2, m_y            , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x2, m_y + h13      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x2, m_y + h23      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x2, m_y + m_height , i*32, j*32, i*32+32, j*32+32 ) )
+                {
+                    m_x = i * 32 + m_width / 2 + 1;
+                    goto end_col_check_x_for_enemies;
+                }
+
+                if( CONTAINS( new_x3, m_y            , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x3, m_y + h13      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x3, m_y + h23      , i*32, j*32, i*32+32, j*32+32 ) ||
+                    CONTAINS( new_x3, m_y + m_height , i*32, j*32, i*32+32, j*32+32 ) )
+                {
+                    m_x = i * 32 - m_width;
+                    goto end_col_check_x_for_enemies;
+                }
+            }
+        }
     }
-    else
-    {
-        m_x += m_vx;
-        m_y += m_vy;
+    x_collision = false;
+end_col_check_x_for_enemies:
+
+    if(x_collision)
+        m_facing = !m_facing;
+
+    //check if it's dead here
+    if(true){
+        if(!m_facing){
+            m_x -= m_vx * speed_mult;
+            m_walk_phase = (m_walk_phase + 1) % 3;
+        }
+        else{
+            m_x += m_vx * speed_mult;
+            m_walk_phase = (m_walk_phase + 1) % 3;
+        }
     }
 }
-
-
-
 
 Bullet::Bullet( uint32_t id, uint8_t p_id, float x, float y, uint8_t facing ) :
     GameObject( id )

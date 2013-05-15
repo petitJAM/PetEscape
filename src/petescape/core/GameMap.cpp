@@ -83,6 +83,7 @@ void GameMap::generate(){
 
     // populate with random platforms
     int n_plats = rand() % 150 + 100, plat_len, plat_x, plat_y;
+    //n_plats = 0;
 
     if (m_length > 10)
     {
@@ -98,10 +99,6 @@ void GameMap::generate(){
             }
         }
     }
-}
-
-void GameMap::spawnEnemies() {
-
 }
 
 const uint16_t GameMap::getValue(const uint32_t &x, const uint32_t &y) const
@@ -166,6 +163,10 @@ const uint8_t GameMap::getLength(){
 
 const size_t GameMap::getSize(){
     return m_height*m_length/**sizeof(uint8_t)*/;
+}
+
+bool GameMap::isGenerated(){
+    return generated;
 }
 
 void GameMap::display(){

@@ -49,6 +49,7 @@ boost::asio::ip::tcp::socket *socket;
 network_packet                      input;
 std::map<uint32_t, GameObject *>    objs;
 std::map<uint32_t, PlayerObject *>  players;
+std::map<uint32_t, EnemyObject *>   enemies;
 
 uint8_t                       client_id;
 
@@ -58,15 +59,6 @@ GameMap                      *map;
 BlockMap                     *block_map;
 
 NewGameState                  game_state;
-
-uint8_t                       enemy1state; // magic right now , change it later
-uint8_t                       enemy1facing;
-
-uint8_t                       enemy2state;
-uint8_t                       enemy2facing;
-
-uint8_t                       enemy3state;
-uint8_t                       enemy3facing;
 
 uint32_t                      bullet_id = 0;
 uint32_t                      e_id      = 0;
@@ -192,14 +184,17 @@ public:
             }
         break;
         case EnemyType:
-            if( objs.count( data->id ) == 0 )
+            if( enemies.count( data->id ) == 0 )
             {
                 genObject( data );
             }
             else
             {
-                objs[ data->id ]->setX( data->x );
-                objs[ data->id ]->setY( data->y );
+                enemies[ data-> id ]->setX( data->x );
+                enemies[ data-> id ]->setY( data->y );
+                enemies[ data-> id ]->set_enemy_type( data->second_type);
+                enemies[ data-> id ]->set_facing( data->facing );
+                enemies[ data-> id ]->set_walk_phase( data->walk_phase );
             }
         break;
         case BulletType:
@@ -244,10 +239,11 @@ public:
             MESSAGE( "Done with new player" );
         break;
         case EnemyType:
-            obj = EnemyObject::CreateEnemy( data->id, data->x, data->y );
-            objs[ data->id ] = obj;
-            obj->setRenderer( new petescape::core::PoorRenderer ); // FIXME
-            //obj->setRenderer( new petescape::core::EnemyRenderer( enemy_bitmaps[ 0 ] ) ); // 0 would be data->enemy_type or something
+            obj = EnemyObject::CreateEnemy( data->id, data->x, data->y, data->second_type );
+            enemies[ data->id ] = static_cast<EnemyObject*>(obj);
+            enemies[ data->id ]->setRenderer( new petescape::core::EnemyRenderer( enemy_bitmaps[ data->second_type ]) );
+
+            MESSAGE("Done with new enemy");
         break;
         case BulletType:
             obj = Bullet::CreateBullet( data->id, data->p_id, data->x, data->y, data->facing );
@@ -281,7 +277,8 @@ public:
             break;
 
         case EnemyType:
-            objs.erase( data->id );
+            enemies.erase( data->id );
+            break;
 
         case BulletType:
             objs.erase( data->id );
@@ -314,6 +311,7 @@ public:
             MESSAGE( "CLIENT: Sending C_REQUEST_MAP" );
             Sleep(2);
             NetOps.async_write( new_packet, C_REQUEST_MAP );
+
         } break;
         case S_MAP_HEADER:
         {
@@ -325,6 +323,7 @@ public:
 
             //a little rough
             map = new GameMap( map_height, map_length );
+            NetOps.async_write( new_packet, E_UPDATE );
         } break;
 
         case S_MAP_DATA:
@@ -357,6 +356,14 @@ public:
         {
 //            MESSAGE( "CLIENT: Recieved O_UPDATE" );
             updateObject( &packet->data.o_update );
+        } break;
+
+        case E_UPDATE:
+        {
+            MESSAGE( "CLIENT: Recieved E_UPDATE" );
+
+            updateObject( &packet->data.e_update );
+
         } break;
 
         case O_DESTORY:
@@ -523,7 +530,7 @@ void load_images()
     }
 
     tile_count = 0;
-    ALLEGRO_BITMAP **enemies = GameOps.load_sprite_map( enemy_map, 43, 64, tile_count );
+    ALLEGRO_BITMAP **enemyPics = GameOps.load_sprite_map( enemy_map, 43, 64, tile_count );
 
     if( tile_count != ( 8 * 3 ) )
     {
@@ -531,18 +538,18 @@ void load_images()
         exit( 1 );
     }
 
-    if( enemies != nullptr )
+    if( enemyPics != nullptr )
     {
         for( int i = 0; i < 3; ++i )
         {
             for( int j = 0; j < 8; ++j )
             {
-                enemy_bitmaps[ i ][ j ] = enemies[ i * 8 + j ];
+                enemy_bitmaps[ i ][ j ] = enemyPics[ i * 8 + j ];
             }
 
-            current_enemy_bitmap[ i ] = enemies[ i * 8 ];
-            current_enemy_bounds[ i ].x = 800;
-            current_enemy_bounds[ i ].y = 480;
+            current_enemy_bitmap[ i ] = enemyPics[ i * 8 ];
+            current_enemy_bounds[ i ].x = 0;//800; TODO KEEP IN MIND
+            current_enemy_bounds[ i ].y = 0;
             current_enemy_bounds[ i ].width = 43;
             current_enemy_bounds[ i ].height = 64;
         }
@@ -650,11 +657,19 @@ void render_playing_state()
         ((GameObject*)(tmp.second))->render();
     }
 
-    BOOST_FOREACH( m_element tmp, players )
+    BOOST_FOREACH( m_element tmp, enemies )
     {
-        ((GameObject*)(tmp.second))->render();
+        EnemyObject* enemy = ((EnemyObject*)(tmp.second));
+        std::cerr << (int)enemy->getID() << " " << enemy->getX() << " " << enemy->getY() << " " << enemy->get_enemy_type() << std::endl;
+        ((EnemyObject*)(tmp.second))->render();
     }
 
+    BOOST_FOREACH( m_element tmp, players )
+    {
+        ((PlayerObject*)(tmp.second))->render();
+    }
+
+/*
     // TODO move this into EnemyRenderer class
     // ENEMY 1
     if (enemy1facing%2==0){
@@ -685,6 +700,8 @@ void render_playing_state()
 
     al_draw_bitmap( current_enemy_bitmap[2], current_enemy_bounds[2].x + GLOBAL_RENDER_OFFSET, current_enemy_bounds[2].y, 0);
     enemy3state++;
+
+    */
 
     // HP bar
 
@@ -802,14 +819,6 @@ int c_main( int /*argc*/, char **argv )
 
         al_start_timer( timer );
 
-        MESSAGE( "init enemies" );
-        update_obj *e1  = new update_obj();
-        e1->id          = e_id++;
-        e1->facing      = 1;
-        e1->x           = 800;
-        e1->y           = 480;
-
-
         printf("Starting While Loop\n");
         // Allegro Event loop.
         while( !should_exit )
@@ -886,42 +895,22 @@ int c_main( int /*argc*/, char **argv )
                             }
                         }
                     }
-
-                    // TODO this will be handled by update() in the above foreach
-                    // TODO use bounds of map, not screen
-                    // ENEMY 1
-                    if (current_enemy_bounds[0].x<-37||current_enemy_bounds[0].x>805){
-                       enemy1facing++;
-                    }
-                    if (enemy1facing%2==0){
-                        current_enemy_bounds[0].x-=5; // temp in changing enemy location
-                    }else{
-                        current_enemy_bounds[0].x+=5; // temp in changing enemy location
-                    }
-
-                    // ENEMY 2
-                    if (current_enemy_bounds[1].x<-37||current_enemy_bounds[1].x>805){
-                       enemy2facing++;
-                    }
-                    if (enemy2facing%2==0){
-                        current_enemy_bounds[1].x-=10; // temp in changing enemy location
-                    }else{
-                        current_enemy_bounds[1].x+=10; // temp in changing enemy location
-                    }
-
-                    // ENEMY 3
-                    if (current_enemy_bounds[2].x<-37||current_enemy_bounds[2].x>805){
-                       enemy3facing++;
-                    }
-                    if (enemy3facing%2==0){
-                        current_enemy_bounds[2].x-=15; // temp in changing enemy location
-                    }else{
-                        current_enemy_bounds[2].x+=15; // temp in changing enemy location
-                    }
-
-                    if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
-                                     current_enemy_bounds[0].x, current_enemy_bounds[0].y ) )
+                    BOOST_FOREACH( m_element tmp, enemies)
                     {
+                        ((EnemyObject*)(tmp.second))->update();
+                    }
+
+
+                    bool hit = false;
+                    //begin collisions
+                    BOOST_FOREACH( m_element tmp, enemies)
+                    {
+                        hit = check_collision( players[client_id]->getX(), players[ client_id ]->getY(),
+                                                       ((EnemyObject*)tmp.second)->getX(), ((EnemyObject*)tmp.second)->getY());
+                        if(hit)
+                            break;
+                    }
+                    if(hit){
                         players[ client_id ]->start_hit();
                         currentHp=players[ client_id ]->get_hitpoint();
                         if(currentHp>0){
@@ -933,42 +922,8 @@ int c_main( int /*argc*/, char **argv )
                             players[ client_id ]->set_hitpoint(0);
                             players[ client_id ]->set_is_dead();
                         }
-
                     }
-                    else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
-                                     current_enemy_bounds[1].x, current_enemy_bounds[1].y ) )
-                    {
-                        players[ client_id ]->start_hit();
-//                        uint32_t currentHp;
-                        currentHp=players[ client_id ]->get_hitpoint();
-                        if(currentHp>0){
-                            currentHp--;
-                            players[ client_id ]->set_hitpoint(currentHp);
-                        }
-                        else
-                        {
-                            players[ client_id ]->set_hitpoint(0);
-                            players[ client_id ]->set_is_dead();
-                        }
-                    }
-                    else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
-                                     current_enemy_bounds[2].x, current_enemy_bounds[2].y ) )
-                    {
-                        players[ client_id ]->start_hit();
-//                        uint32_t currentHp;
-                        currentHp=players[ client_id ]->get_hitpoint();
-                        if(currentHp>0){
-                            currentHp--;
-                            players[ client_id ]->set_hitpoint(currentHp);
-                        }
-                        else
-                        {
-                            players[ client_id ]->set_hitpoint(0);
-                            players[ client_id ]->set_is_dead();
-                        }
-                    }
-                    else
-                    {
+                    else{
                         players[ client_id ]->unhit();
                     }
 
@@ -978,13 +933,7 @@ int c_main( int /*argc*/, char **argv )
                         GameObject* current = (GameObject*)tmp.second;
                         packet_list packet;
 
-                        if( current->getType() == EnemyType )
-                        {
-                            MESSAGE( "update enemy" );
-//                            packet.o_update.id = current->getID();
-//                            packet.o_update.type = current->getType();
-                        }
-                        else if( current->getType() == BulletType )
+                        if( current->getType() == BulletType )
                         {
                             packet.o_update.id = current->getID();
                             packet.o_update.p_id = ((Bullet*)current)->get_pid();
