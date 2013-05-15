@@ -54,6 +54,8 @@ void GameMap::generate(){
 
             else if( j == getHeight() - 1 )
                 setValue( i, j, 7 );
+            else if( i == 0 )
+                setValue( i, j, 8 );
 
             else
                 setValue( i, j, 0 );
@@ -78,15 +80,15 @@ void GameMap::generate(){
     srand( time( nullptr ) );
 
     // populate with random platforms
-    int n_plats = rand() % 25, plat_len, plat_x, plat_y;
+    int n_plats = rand() % 250 + 100, plat_len, plat_x, plat_y;
 
     if (m_length > 10)
     {
         for (int i = 0; i<n_plats; i++)
         {
-            plat_len = rand() % 5;
-            plat_x = (rand() % (m_length/* - 10*/))/* + 5*/; // how far over
-            plat_y = (rand() % (m_height - 5)) + 1; // how far up
+            plat_len = rand() % 8;
+            plat_x = (rand() % (m_length - 1/* - 10*/)) + 1/* + 5*/; // how far over
+            plat_y = (rand() % (m_height - 6)) + 1; // how far up
 
             for (int j = 0; j<plat_len; j++)
             {

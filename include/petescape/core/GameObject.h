@@ -56,8 +56,8 @@ protected:
 
 protected:
     // Location members.
-    float   m_x;
-    float   m_y;
+    int   m_x;
+    int   m_y;
 
     // Velocity members.
     float   m_vx;
