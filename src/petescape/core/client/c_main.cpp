@@ -237,7 +237,6 @@ public:
             MESSAGE( "Got new player" );
             obj = PlayerObject::CreatePlayer( data->id );
             players[ data->id ] = static_cast<PlayerObject*>(obj);
-
             obj->setRenderer( new petescape::core::PlayerRenderer( character_bitmaps[ data->id ] ) );
             MESSAGE( "Done with new player" );
         break;

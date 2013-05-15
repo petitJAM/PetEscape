@@ -61,7 +61,7 @@ void PlayerRenderer::render( GameObject* obj )
         }
 
         al_draw_bitmap( this->m_sprites[ index ],
-                        400, //player->getX(),
+                        player->getX() + GLOBAL_RENDER_OFFSET,
                         player->getY(),
                         0 );
     }
