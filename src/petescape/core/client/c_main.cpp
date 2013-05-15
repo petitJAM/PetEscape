@@ -1,3 +1,6 @@
+
+float GLOBAL_RENDER_OFFSET;
+
 #include <iostream>
 #include "petescape/core/client/client.h"
 #include "petescape/core/client/client_resources.h"
@@ -23,6 +26,7 @@
 
 #include <map>
 #include <cstdlib>
+
 
 namespace petescape {
 namespace core {
@@ -65,6 +69,7 @@ uint8_t                       enemy3state;
 uint8_t                       enemy3facing;
 
 uint32_t                      bullet_id = 0;
+uint32_t                      e_id      = 0;
 
 uint8_t                       num_map_packets_recieved;
 uint32_t                      currentHp;
@@ -186,6 +191,17 @@ public:
                 players[ data->id ]->set_walk_phase( data->walk_phase );
             }
         break;
+        case EnemyType:
+            if( objs.count( data->id ) == 0 )
+            {
+                genObject( data );
+            }
+            else
+            {
+                objs[ data->id ]->setX( data->x );
+                objs[ data->id ]->setY( data->y );
+            }
+        break;
         case BulletType:
             if( objs.count( data->id ) == 0 )
             {
@@ -218,24 +234,25 @@ public:
     {
         GameObject *obj = nullptr;
 
-        MESSAGE( "Creating object." );
-
         switch( data->type )
         {
         case PlayerType:
             MESSAGE( "Got new player" );
             obj = PlayerObject::CreatePlayer( data->id );
             players[ data->id ] = static_cast<PlayerObject*>(obj);
-
             obj->setRenderer( new petescape::core::PlayerRenderer( character_bitmaps[ data->id ] ) );
             MESSAGE( "Done with new player" );
         break;
+        case EnemyType:
+            obj = EnemyObject::CreateEnemy( data->id, data->x, data->y );
+            objs[ data->id ] = obj;
+            obj->setRenderer( new petescape::core::PoorRenderer ); // FIXME
+            //obj->setRenderer( new petescape::core::EnemyRenderer( enemy_bitmaps[ 0 ] ) ); // 0 would be data->enemy_type or something
+        break;
         case BulletType:
-            MESSAGE( "Got BulletType" );
             obj = Bullet::CreateBullet( data->id, data->p_id, data->x, data->y, data->facing );
             objs[ data->id ] = obj;
             obj->setRenderer( new petescape::core::PoorRenderer );
-            MESSAGE( "Completed BulletType");
         break;
         case OtherType:
             obj = GameObject::CreateGameObject( data->id );
@@ -262,6 +279,9 @@ public:
         case PlayerType:
             players.erase( data->id );
             break;
+
+        case EnemyType:
+            objs.erase( data->id );
 
         case BulletType:
             objs.erase( data->id );
@@ -475,10 +495,10 @@ void load_images()
         {
             for( int j = 0; j < 31; ++j )
             {
-                character_bitmaps[ i ][ j ] = characters[ i * 30 + j ];
+                character_bitmaps[ i ][ j ] = characters[ i * 31 + j ];
             }
 
-            current_char_bitmap[ i ] = characters[ i * 30 ];
+            current_char_bitmap[ i ] = characters[ i * 31 ];
             current_char_bounds[ i ].x = 0;
             current_char_bounds[ i ].y = 0;
             current_char_bounds[ i ].width = 32;
@@ -616,7 +636,10 @@ void render_playing_state()
         {
             if( block_map->getBlock( i, j ).getBlockType() )
             {
-                al_draw_bitmap( tiles[ block_map->getBlock( i, j ).getBlockType() - 1 ], i * 32, j * 32, 0 );
+                al_draw_bitmap( tiles[ block_map->getBlock( i, j ).getBlockType() - 1 ],
+                        i * 32 + GLOBAL_RENDER_OFFSET,
+                        j * 32,
+                        0 );
             }
         }
     }
@@ -632,16 +655,7 @@ void render_playing_state()
         ((GameObject*)(tmp.second))->render();
     }
 
-//    if (enemy1 = nullptr){
-//        printf("enemy not created");
-//        enemy1->type=0;
-//        enemy1->current_enemy_bitmap=enemy_bitmaps[enemy1->type][0];
-//        enemy1->current_enemy_bound.x=100;
-//        enemy1->current_enemy_bound.y = 100;
-//        enemy1->current_enemy_bound.width = 43;
-//        enemy1->current_enemy_bound.height = 64;
-//    }
-
+    // TODO move this into EnemyRenderer class
     // ENEMY 1
     if (enemy1facing%2==0){
         current_enemy_bitmap[0] = enemy_bitmaps[0][enemy1state%4];
@@ -649,7 +663,7 @@ void render_playing_state()
         current_enemy_bitmap[0] = enemy_bitmaps[0][enemy1state%4+4];
     }
 
-    al_draw_bitmap( current_enemy_bitmap[0], current_enemy_bounds[0].x , current_enemy_bounds[0].y, 0);
+    al_draw_bitmap( current_enemy_bitmap[0], current_enemy_bounds[0].x + GLOBAL_RENDER_OFFSET, current_enemy_bounds[0].y, 0);
     enemy1state++;
 
     // ENEMY 2
@@ -659,7 +673,7 @@ void render_playing_state()
         current_enemy_bitmap[1] = enemy_bitmaps[1][enemy2state%4+4];
     }
 
-    al_draw_bitmap( current_enemy_bitmap[1], current_enemy_bounds[1].x , current_enemy_bounds[1].y, 0);
+    al_draw_bitmap( current_enemy_bitmap[1], current_enemy_bounds[1].x + GLOBAL_RENDER_OFFSET, current_enemy_bounds[1].y, 0);
     enemy2state++;
 
     // ENEMY 3
@@ -669,7 +683,7 @@ void render_playing_state()
         current_enemy_bitmap[2] = enemy_bitmaps[2][enemy3state%4+4];
     }
 
-    al_draw_bitmap( current_enemy_bitmap[2], current_enemy_bounds[2].x , current_enemy_bounds[2].y, 0);
+    al_draw_bitmap( current_enemy_bitmap[2], current_enemy_bounds[2].x + GLOBAL_RENDER_OFFSET, current_enemy_bounds[2].y, 0);
     enemy3state++;
 
     // HP bar
@@ -706,6 +720,7 @@ int c_main( int /*argc*/, char **argv )
 
     game_state = State_Welcome;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
+    GLOBAL_RENDER_OFFSET = 0;
 
     printf("Setting up local Variables\n");
     try
@@ -787,6 +802,14 @@ int c_main( int /*argc*/, char **argv )
 
         al_start_timer( timer );
 
+        MESSAGE( "init enemies" );
+        update_obj *e1  = new update_obj();
+        e1->id          = e_id++;
+        e1->facing      = 1;
+        e1->x           = 800;
+        e1->y           = 480;
+
+
         printf("Starting While Loop\n");
         // Allegro Event loop.
         while( !should_exit )
@@ -831,18 +854,17 @@ int c_main( int /*argc*/, char **argv )
                         {
                             players[ client_id ]->attack();
 
-                            MESSAGE( "attacking!" );
-
                             update_obj *newB = new update_obj();
-
-                            newB->id =      bullet_id++;
-                            newB->p_id =    client_id;
-                            newB->facing =  players[ client_id ]->get_facing();
-                            newB->x =       players[ client_id ]->getX() + 16;
-                            newB->y =       players[ client_id ]->getY() + 32;
-                            newB->type =    BulletType;
-
+                            newB->id        = bullet_id++;
+                            newB->p_id      = client_id;
+                            newB->facing    = players[ client_id ]->get_facing();
+                            newB->x         = players[ client_id ]->getX() + 16;
+                            newB->y         = players[ client_id ]->getY() + 32;
+                            newB->type      = BulletType;
                             GameOps.genObject( newB );
+
+                            // TODO: Write it to the server, delete newB
+
                         }
                     }
                     if( key[ KEY_R ] ){
@@ -855,8 +877,18 @@ int c_main( int /*argc*/, char **argv )
                     BOOST_FOREACH( m_element tmp, objs )
                     {
                         ((GameObject*)(tmp.second))->update();
+                        if( ((GameObject*)(tmp.second))->getType() == BulletType )
+                        {
+                            Bullet* current = (Bullet*)(tmp.second);
+                            if (current->getX() > MAP_LENGTH*32)
+                            {
+                                objs.erase(current->getID());
+                            }
+                        }
                     }
 
+                    // TODO this will be handled by update() in the above foreach
+                    // TODO use bounds of map, not screen
                     // ENEMY 1
                     if (current_enemy_bounds[0].x<-37||current_enemy_bounds[0].x>805){
                        enemy1facing++;
@@ -890,7 +922,6 @@ int c_main( int /*argc*/, char **argv )
                     if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[0].x, current_enemy_bounds[0].y ) )
                     {
-                        MESSAGE( "Collided 0" );
                         players[ client_id ]->start_hit();
                         currentHp=players[ client_id ]->get_hitpoint();
                         if(currentHp>0){
@@ -903,12 +934,10 @@ int c_main( int /*argc*/, char **argv )
                             players[ client_id ]->set_is_dead();
                         }
 
-
                     }
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[1].x, current_enemy_bounds[1].y ) )
                     {
-                        MESSAGE( "Collided 1" );
                         players[ client_id ]->start_hit();
 //                        uint32_t currentHp;
                         currentHp=players[ client_id ]->get_hitpoint();
@@ -925,7 +954,6 @@ int c_main( int /*argc*/, char **argv )
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
                                      current_enemy_bounds[2].x, current_enemy_bounds[2].y ) )
                     {
-                        MESSAGE( "Collided 2" );
                         players[ client_id ]->start_hit();
 //                        uint32_t currentHp;
                         currentHp=players[ client_id ]->get_hitpoint();
@@ -944,6 +972,30 @@ int c_main( int /*argc*/, char **argv )
                         players[ client_id ]->unhit();
                     }
 
+                    // Write out everything in objs
+                    BOOST_FOREACH( m_element tmp, objs )
+                    {
+                        GameObject* current = (GameObject*)tmp.second;
+                        packet_list packet;
+
+                        if( current->getType() == EnemyType )
+                        {
+                            MESSAGE( "update enemy" );
+//                            packet.o_update.id = current->getID();
+//                            packet.o_update.type = current->getType();
+                        }
+                        else if( current->getType() == BulletType )
+                        {
+                            packet.o_update.id = current->getID();
+                            packet.o_update.p_id = ((Bullet*)current)->get_pid();
+                            packet.o_update.x = current->getX();
+                            packet.o_update.y = current->getY();
+                            packet.o_update.type = current->getType();
+                            packet.o_update.facing = ((Bullet*)current)->get_facing();
+
+                            NetOps.async_write( packet, O_UPDATE );
+                        }
+                    }
 
 
                     // For now throw a packet out every frame. Not laggy at all.

@@ -45,7 +45,7 @@ ALLEGRO_BITMAP *play_solo_bitmap,
                *host_game_bitmap,
                *join_game_bitmap,
                *quit_game_bitmap,
-               *character_bitmaps[4][30],
+               *character_bitmaps[4][31],
                *enemy_bitmaps[3][8],
                *current_char_bitmap[4],
                *current_enemy_bitmap[3];

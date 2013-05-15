@@ -274,10 +274,23 @@ public:
             // Write other objects.
             BOOST_FOREACH( map_element i, objs )
             {
-                new_packet.o_update.id   = ((GameObject*)(i.second))->getID();
-                new_packet.o_update.type = (uint16_t)OtherType;
-                new_packet.o_update.x    = (uint32_t)((GameObject*)(i.second))->getX();
-                new_packet.o_update.y    = (uint32_t)((GameObject*)(i.second))->getY();
+                GameObject* current = (GameObject*)i.second;
+                if ( current->getType() == EnemyType )
+                {
+                    new_packet.o_update.id   = current->getID();
+                    new_packet.o_update.type = (uint16_t)EnemyType;
+                    new_packet.o_update.x    = (uint32_t)current->getX();
+                    new_packet.o_update.y    = (uint32_t)current->getY();
+                }
+                else if ( current->getType() == BulletType )
+                {
+                    new_packet.o_update.id     = current->getID();
+                    new_packet.o_update.p_id   = ((Bullet*)current)->get_pid();
+                    new_packet.o_update.type   = (uint16_t)BulletType;
+                    new_packet.o_update.x      = (uint32_t)current->getX();
+                    new_packet.o_update.y      = (uint32_t)current->getY();
+                    new_packet.o_update.facing = ((Bullet*)current)->get_facing();
+                }
 
                 MESSAGE( "SERVER: Sending O_UPDATE" );
                 NetworkOps.async_write( packet->head.sender_id, new_packet, O_UPDATE );
@@ -316,7 +329,21 @@ public:
                     NetworkOps.async_write( ((PlayerObject*)(i.second))->getID(), new_packet, O_UPDATE );
                 }
 
-                break;
+            break;
+            case EnemyType:
+            break;
+            case BulletType:
+                if( objs.count( packet->data.o_update.id ) == 0 )
+                {
+                    genObject( packet->data.o_update );
+                }
+                else
+                {
+                    objs[ packet->data.o_update.id ]->setX( packet->data.o_update.x );
+                    objs[ packet->data.o_update.id ]->setY( packet->data.o_update.y );
+                }
+
+            break;
             }
 
         } break;
@@ -396,11 +423,20 @@ public:
         }
     }
 
-    uint32_t genObject()
+    void genObject( const update_obj data )
     {
-        GameObject *obj = GameObject::CreateGameObject( );
-        objs[ obj->getID() ] = obj;
-        return obj->getID();
+        GameObject *obj = nullptr;
+
+        switch( data.type )
+        {
+        case EnemyType:
+        break;
+        case BulletType:
+            obj = Bullet::CreateBullet( data.id, data.p_id, data.x, data.y, data.facing );
+            objs[ data.id ] = obj;
+
+        break;
+        }
     }
 
 

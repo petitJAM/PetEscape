@@ -3,7 +3,7 @@
 
 //#define MAP_LENGTH 100
 //#define MAP_HEIGHT 40
-#define MAP_LENGTH 25
+#define MAP_LENGTH 200
 #define MAP_HEIGHT 19
 
 #define KEY_UP_INDEX 0
@@ -16,6 +16,8 @@
 #define PLAYER_SPEED 8
 
 #define MAX_CONNECTIONS 4
+
+extern float GLOBAL_RENDER_OFFSET;
 
 #include <iostream>
 #include <stdint.h>
@@ -61,6 +63,7 @@ enum GameObjectType
 {
     BlockType,
     PlayerType,
+    EnemyType,
     BulletType,
     OtherType,
 
