@@ -75,7 +75,7 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->m_is_jumping = false;
     this->hitpoint = 100;
     this->is_attacking = 0;
-    this->is_dead = 0;
+    this->is_dead = false;
 
     this->m_x = 64;
     this->m_y = 128;

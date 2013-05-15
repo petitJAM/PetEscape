@@ -894,8 +894,8 @@ int c_main( int /*argc*/, char **argv )
                         players[ client_id ]->start_hit();
                         currentHp=players[ client_id ]->get_hitpoint();
                         if(currentHp>0){
-                        currentHp--;
-                        players[ client_id ]->set_hitpoint(currentHp);
+                            currentHp--;
+                            players[ client_id ]->set_hitpoint(currentHp);
                         }
                         else
                         {
@@ -913,13 +913,13 @@ int c_main( int /*argc*/, char **argv )
 //                        uint32_t currentHp;
                         currentHp=players[ client_id ]->get_hitpoint();
                         if(currentHp>0){
-                        currentHp--;
-                        players[ client_id ]->set_hitpoint(currentHp);
+                            currentHp--;
+                            players[ client_id ]->set_hitpoint(currentHp);
                         }
                         else
                         {
                             players[ client_id ]->set_hitpoint(0);
-
+                            players[ client_id ]->set_is_dead();
                         }
                     }
                     else if ( check_collision( players[ client_id ]->getX(), players[ client_id ]->getY(),
@@ -930,13 +930,13 @@ int c_main( int /*argc*/, char **argv )
 //                        uint32_t currentHp;
                         currentHp=players[ client_id ]->get_hitpoint();
                         if(currentHp>0){
-                        currentHp--;
-                        players[ client_id ]->set_hitpoint(currentHp);
+                            currentHp--;
+                            players[ client_id ]->set_hitpoint(currentHp);
                         }
                         else
                         {
                             players[ client_id ]->set_hitpoint(0);
-
+                            players[ client_id ]->set_is_dead();
                         }
                     }
                     else

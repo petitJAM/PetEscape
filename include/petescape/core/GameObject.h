@@ -120,8 +120,8 @@ public:
     inline void set_facing( uint8_t facing ){ this->m_facing = facing; }
     inline void set_walk_phase( uint8_t walk_phase ){ this->m_walk_phase = walk_phase; }
     inline void set_hitpoint(uint32_t hitpoint){this->hitpoint = hitpoint;}
-    inline void set_is_dead(){this->is_dead = 1;}
-    inline void set_rebirth(){this->is_dead = 0; this->hitpoint=100;}
+    inline void set_is_dead(){this->is_dead = true;}
+    inline void set_rebirth(){this->is_dead = false; this->hitpoint=100;}
 
 
 private:
@@ -138,7 +138,7 @@ private:
 
     uint8_t is_attacking;
     uint32_t hitpoint;
-    uint8_t is_dead;
+    bool is_dead;
 
     /*
      * 0 = Left
