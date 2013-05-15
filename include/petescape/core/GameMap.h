@@ -20,6 +20,8 @@ public:
     void generate();
     //void generate(uint32_t seed);
 
+    void spawnEnemies();
+
     const uint16_t getValue( const uint32_t &x, const uint32_t &y ) const;
 
     inline void setValue(const uint32_t &x, const uint32_t &y, const uint16_t &value );

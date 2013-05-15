@@ -185,7 +185,6 @@ end_col_check_x:
                     CONTAINS( m_x + m_width  , new_y4, i*32, j*32, i*32+32, j*32+32 ) )
                 {
                     m_y = j * 32 - m_height;
-                    std::cerr << (int) m_y << std::endl;
                     m_is_jumping = false;
                     goto end_col_check_y;
                 }
