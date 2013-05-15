@@ -18,7 +18,7 @@ const float MovementSpeed = 5.00;
 const float JumpInitVelocity = 60.00;
 
 enum MYKEYS {
-   KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A
+   KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_R
 };
 
 typedef struct

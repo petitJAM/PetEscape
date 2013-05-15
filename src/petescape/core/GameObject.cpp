@@ -75,6 +75,7 @@ PlayerObject::PlayerObject( uint32_t id ) :
     this->m_is_jumping = false;
     this->hitpoint = 100;
     this->is_attacking = 0;
+    this->is_dead = 0;
 
     this->m_x = 64;
     this->m_y = 128;
@@ -96,7 +97,7 @@ PlayerObject* PlayerObject::CreatePlayer( uint32_t id )
 
 void PlayerObject::start_jump()
 {
-    if( !this->m_is_jumping && !this->is_hit && !this->is_attacking)
+    if(!is_dead && !this->m_is_jumping && !this->is_hit && !this->is_attacking)
     {
         this->m_vy = JUMP_VELOCITY;
         this->m_walk_phase = 3;
@@ -237,25 +238,35 @@ end_col_check_y:
         m_y += m_vy;
     }
 
-    if (this->is_hit)
-        this->m_walk_phase = 13;
-    else if( this->m_is_jumping )
-        this->m_walk_phase = 1;
-    else if( !IS_ZERO( this->m_vx ) )
-        this->m_walk_phase = ( this->m_walk_phase + 1 ) % 12;
-    else
-        this->m_walk_phase = 12;
-
-    if (this->is_attacking)
+    if (!this->is_dead)
     {
-        this->m_walk_phase=14;
-        this->is_attacking--;
-        printf("is_attacking %d\n", is_attacking);
+
+        if (this->is_hit)
+            this->m_walk_phase = 13;
+        else if( this->m_is_jumping )
+            this->m_walk_phase = 1;
+        else if( !IS_ZERO( this->m_vx ) )
+            this->m_walk_phase = ( this->m_walk_phase + 1 ) % 12;
+        else
+            this->m_walk_phase = 12;
+
+        if (this->is_attacking)
+        {
+            this->m_walk_phase=14;
+            this->is_attacking--;
+            printf("is_attacking %d\n", is_attacking);
+        }
     }
+    else
+    {
+        this->m_walk_phase=15;
+    }
+
+
 }
 
 void PlayerObject::start_move_left(){
-    if (!is_hit && !is_attacking)
+    if (!is_dead&&!is_hit && !is_attacking)
     {
         this->m_vx = -PLAYER_WALK_AMT;
         this->m_facing = 0;
@@ -267,7 +278,7 @@ void PlayerObject::start_move_left(){
 }
 
 void PlayerObject::start_move_right(){
-    if (!is_hit && !is_attacking)
+    if (!is_dead&&!is_hit && !is_attacking)
     {
         this->m_vx = PLAYER_WALK_AMT;
         this->m_facing = 1;

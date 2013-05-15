@@ -453,7 +453,7 @@ void load_images()
     // wtf why did you change the name to cha.bmp... that doesn't even make sense.
     // lol =w = i change it to character happy? :)
     ALLEGRO_BITMAP *char_map = al_load_bitmap( "assets/character/character.bmp" );
-    al_convert_mask_to_alpha(char_map,al_map_rgb(255,255,255));
+    al_convert_mask_to_alpha(char_map,al_map_rgb(221,6,178));
 
     if (char_map == nullptr){
         MESSAGE( "Could not load character images..." );
@@ -463,7 +463,7 @@ void load_images()
     int tile_count = 0;
     ALLEGRO_BITMAP **characters = GameOps.load_sprite_map( char_map, 32, 64, tile_count );
 
-    if( tile_count != ( 30 * 4 ) )
+    if( tile_count != ( 31 * 4 ) )
     {
         MESSAGE( "Didn't load correct image count... " << tile_count );
         exit( 1 );
@@ -473,7 +473,7 @@ void load_images()
     {
         for( int i = 0; i < 4; ++i )
         {
-            for( int j = 0; j < 30; ++j )
+            for( int j = 0; j < 31; ++j )
             {
                 character_bitmaps[ i ][ j ] = characters[ i * 30 + j ];
             }
@@ -593,6 +593,11 @@ void render_welcome_state()
                     join_game_bounds.y,
                     0 );
 
+    quit_game_bounds.x = al_get_display_width( display ) / 2 - al_get_bitmap_width( quit_game_bitmap ) / 2;
+    quit_game_bounds.y = al_get_display_height( display ) / 5 * 4 - al_get_bitmap_height( quit_game_bitmap ) / 2;
+    quit_game_bounds.width = al_get_bitmap_width( quit_game_bitmap );
+    quit_game_bounds.height = al_get_bitmap_height( quit_game_bitmap );
+
     al_draw_bitmap( quit_game_bitmap,
                     quit_game_bounds.x,
                     quit_game_bounds.y,
@@ -697,7 +702,7 @@ int c_main( int /*argc*/, char **argv )
     display = nullptr;
     timer = nullptr;
     block_map = nullptr;
-    bool key[5] = { false, false, false, false, false};
+    bool key[6] = { false, false, false, false, false, false};
 
     game_state = State_Welcome;
     memset( server_ip_address, '\0', sizeof( server_ip_address ) );
@@ -840,6 +845,9 @@ int c_main( int /*argc*/, char **argv )
                             GameOps.genObject( newB );
                         }
                     }
+                    if( key[ KEY_R ] ){
+                        players[ client_id ]->set_rebirth();
+                    }
 
                     players[ client_id ]->update();
                     ++counter;
@@ -892,7 +900,7 @@ int c_main( int /*argc*/, char **argv )
                         else
                         {
                             players[ client_id ]->set_hitpoint(0);
-
+                            players[ client_id ]->set_is_dead();
                         }
 
 
@@ -979,6 +987,10 @@ int c_main( int /*argc*/, char **argv )
                     case ALLEGRO_KEY_A:
                         key[KEY_A] = true;
                         break;
+                    case ALLEGRO_KEY_R:
+                        key[KEY_R] = true;
+                        break;
+
 
                     }
                 }
@@ -1008,6 +1020,9 @@ int c_main( int /*argc*/, char **argv )
 
                    case ALLEGRO_KEY_A:
                        key[KEY_A] = false;
+                       break;
+                   case ALLEGRO_KEY_R:
+                       key[KEY_R] = false;
                        break;
                    }
                }
